@@ -6,10 +6,12 @@ import type { Category } from "./types";
 export const CATEGORY_COLORS: Record<Category, string> = {
   English: "#2a78d6", // blue
   History: "#eb6834", // orange
-  Language: "#1baf7a", // aqua
-  Science: "#eda100", // yellow
-  Arts: "#e87ba4", // magenta
+  Humanities: "#1baf7a", // aqua
+  Language: "#eda100", // yellow
+  Science: "#e87ba4", // magenta
   Mathematics: "#008300", // green
+  Arts: "#4a3aa7", // violet
+  Specialty: "#e34948", // red
 };
 
 export const SERIES_UNWEIGHTED = "#2a78d6"; // blue

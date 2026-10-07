@@ -48,7 +48,7 @@ create table if not exists public.catalog_courses (
   level text not null check (level in ('Regular', 'H', 'AP', 'APE')),
   credits numeric not null default 1,
   category text not null check (
-    category in ('English', 'History', 'Language', 'Science', 'Mathematics', 'Arts')
+    category in ('English', 'History', 'Humanities', 'Language', 'Science', 'Mathematics', 'Arts', 'Specialty')
   )
 );
 
@@ -65,7 +65,7 @@ create table if not exists public.courses (
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
   category text not null check (
-    category in ('English', 'History', 'Language', 'Science', 'Mathematics', 'Arts')
+    category in ('English', 'History', 'Humanities', 'Language', 'Science', 'Mathematics', 'Arts', 'Specialty')
   ),
   level text not null check (level in ('Regular', 'H', 'AP', 'APE')),
   credits numeric not null default 1,

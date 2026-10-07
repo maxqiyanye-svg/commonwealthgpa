@@ -16,10 +16,12 @@
   /* category colors, fixed order per the validated categorical palette */
   --cat-english: #2a78d6; /* blue */
   --cat-history: #eb6834; /* orange */
-  --cat-language: #1baf7a; /* aqua */
-  --cat-science: #eda100; /* yellow */
-  --cat-arts: #e87ba4; /* magenta */
+  --cat-humanities: #1baf7a; /* aqua */
+  --cat-language: #eda100; /* yellow */
+  --cat-science: #e87ba4; /* magenta */
   --cat-math: #008300; /* green */
+  --cat-arts: #4a3aa7; /* violet */
+  --cat-specialty: #e34948; /* red */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -36,10 +38,12 @@
 
     --cat-english: #3987e5;
     --cat-history: #d95926;
-    --cat-language: #199e70;
-    --cat-science: #c98500;
-    --cat-arts: #d55181;
+    --cat-humanities: #199e70;
+    --cat-language: #c98500;
+    --cat-science: #d55181;
     --cat-math: #008300;
+    --cat-arts: #9085e9;
+    --cat-specialty: #e66767;
   }
 }
 
@@ -56,10 +60,12 @@
 
   --cat-english: #3987e5;
   --cat-history: #d95926;
-  --cat-language: #199e70;
-  --cat-science: #c98500;
-  --cat-arts: #d55181;
+  --cat-humanities: #199e70;
+  --cat-language: #c98500;
+  --cat-science: #d55181;
   --cat-math: #008300;
+  --cat-arts: #9085e9;
+  --cat-specialty: #e66767;
 }
 
 body {

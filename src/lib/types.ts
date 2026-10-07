@@ -1,18 +1,22 @@
 export type Category =
   | "English"
   | "History"
+  | "Humanities"
   | "Language"
   | "Science"
   | "Mathematics"
-  | "Arts";
+  | "Arts"
+  | "Specialty";
 
 export const CATEGORIES: Category[] = [
   "English",
   "History",
+  "Humanities",
   "Language",
   "Science",
   "Mathematics",
   "Arts",
+  "Specialty",
 ];
 
 export type Level = "Regular" | "H" | "AP" | "APE";

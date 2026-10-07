@@ -16,9 +16,11 @@ const config: Config = {
         cat: {
           english: "var(--cat-english)",
           history: "var(--cat-history)",
+          humanities: "var(--cat-humanities)",
           language: "var(--cat-language)",
           science: "var(--cat-science)",
           math: "var(--cat-math)",
+          specialty: "var(--cat-specialty)",
           arts: "var(--cat-arts)",
         },
         status: {

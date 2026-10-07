@@ -37,22 +37,21 @@ relevant periods) can build on it.
 
 ## Categories
 
-Every course is filed under one of six categories: **English, History,
-Language, Science, Mathematics, Arts**. The app ships pre-seeded with the
-full Commonwealth 2026–2027 course catalog (`data/catalog.json`,
-~100 courses) so you can search and pick a course instead of typing it in —
-category and level come pre-filled but are always editable per course you add.
+Every course is filed under one of eight categories: **English, History,
+Humanities, Language, Science, Mathematics, Arts, Specialty**. The app ships
+pre-seeded with the full Commonwealth 2026–2027 course catalog
+(`data/catalog.json`, ~100 courses) so you can search and pick a course
+instead of typing it in — category and level come pre-filled but are always
+editable per course you add.
 
-A few catalog sections don't map perfectly onto six buckets and were given a
-best-guess category you may want to change for your own transcript:
-- **Humanities & Social Sciences** courses (Economics, U.S. Politics, The
-  City in Film) were filed under **History**.
-- **Jazz Theory, Music Theory, and Conducting** were filed under **Arts**
+How the catalog's own sections map onto those eight:
+- **Economics, U.S. Politics in the 21st Century, and The City in Film** are
+  filed under **Humanities**.
+- **Jazz Theory, Music Theory, and Conducting** are filed under **Arts**
   (they're listed in the catalog's Humanities & Social Sciences section but
   are clearly music courses).
 - **Ninth-Grade Seminar, The Purposes of Education, College and Senior
-  Seminar, and Capstone Project** were filed under **History** as a
-  placeholder — reassign them when you add them.
+  Seminar, and Capstone Project** are filed under **Specialty**.
 
 Edit `data/catalog.json` and re-run `supabase/seed.sql` any time the catalog
 changes.
