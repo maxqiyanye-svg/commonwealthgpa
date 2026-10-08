@@ -12,16 +12,17 @@
   --gridline: #e1e0d9;
   --baseline: #c3c2b7;
   --border: rgba(11, 11, 11, 0.1);
+  --accent: #2a78d6; /* general UI accent (buttons/links) — independent of category colors */
 
   /* category colors, fixed order per the validated categorical palette */
-  --cat-english: #2a78d6; /* blue */
+  --cat-english: #e34948; /* red */
   --cat-history: #eb6834; /* orange */
-  --cat-humanities: #1baf7a; /* aqua */
+  --cat-humanities: #1baf7a; /* teal */
   --cat-language: #eda100; /* yellow */
-  --cat-science: #e87ba4; /* magenta */
-  --cat-math: #008300; /* green */
-  --cat-arts: #4a3aa7; /* violet */
-  --cat-specialty: #e34948; /* red */
+  --cat-science: #008300; /* green */
+  --cat-math: #2a78d6; /* blue */
+  --cat-arts: #4a3aa7; /* purple */
+  --cat-electives: #767672; /* gray */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -35,15 +36,16 @@
     --gridline: #2c2c2a;
     --baseline: #383835;
     --border: rgba(255, 255, 255, 0.1);
+    --accent: #3987e5;
 
-    --cat-english: #3987e5;
+    --cat-english: #e66767;
     --cat-history: #d95926;
     --cat-humanities: #199e70;
     --cat-language: #c98500;
-    --cat-science: #d55181;
-    --cat-math: #008300;
+    --cat-science: #008300;
+    --cat-math: #3987e5;
     --cat-arts: #9085e9;
-    --cat-specialty: #e66767;
+    --cat-electives: #9c9b94;
   }
 }
 
@@ -57,15 +59,16 @@
   --gridline: #2c2c2a;
   --baseline: #383835;
   --border: rgba(255, 255, 255, 0.1);
+  --accent: #3987e5;
 
-  --cat-english: #3987e5;
+  --cat-english: #e66767;
   --cat-history: #d95926;
   --cat-humanities: #199e70;
   --cat-language: #c98500;
-  --cat-science: #d55181;
-  --cat-math: #008300;
+  --cat-science: #008300;
+  --cat-math: #3987e5;
   --cat-arts: #9085e9;
-  --cat-specialty: #e66767;
+  --cat-electives: #9c9b94;
 }
 
 body {

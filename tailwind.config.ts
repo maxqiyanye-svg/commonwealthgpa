@@ -13,6 +13,7 @@ const config: Config = {
         "ink-muted": "var(--text-muted)",
         line: "var(--gridline)",
         baseline: "var(--baseline)",
+        accent: "var(--accent)",
         cat: {
           english: "var(--cat-english)",
           history: "var(--cat-history)",
@@ -20,7 +21,7 @@ const config: Config = {
           language: "var(--cat-language)",
           science: "var(--cat-science)",
           math: "var(--cat-math)",
-          specialty: "var(--cat-specialty)",
+          electives: "var(--cat-electives)",
           arts: "var(--cat-arts)",
         },
         status: {

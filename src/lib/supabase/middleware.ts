@@ -34,7 +34,14 @@ export async function updateSession(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
   const isAuthPage = path === "/login" || path === "/signup";
-  const isPublic = isAuthPage || path.startsWith("/_next") || path === "/favicon.ico";
+  // /admin is intentionally open (no login required) for now — it only
+  // manages the shared course catalog, not anyone's personal grades.
+  const isPublic =
+    isAuthPage ||
+    path === "/admin" ||
+    path.startsWith("/admin/") ||
+    path.startsWith("/_next") ||
+    path === "/favicon.ico";
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -46,6 +53,29 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);
+  }
+
+  // First-run onboarding: a signed-in user with zero courses gets forced
+  // through /onboarding before reaching anything else. Once they've added
+  // one course they're free to go anywhere (including editing/removing it).
+  if (user && !isPublic) {
+    const isOnboarding = path === "/onboarding";
+    const { count } = await supabase
+      .from("courses")
+      .select("id", { count: "exact", head: true });
+
+    const hasCourses = (count ?? 0) > 0;
+
+    if (!hasCourses && !isOnboarding) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/onboarding";
+      return NextResponse.redirect(url);
+    }
+    if (hasCourses && isOnboarding) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/dashboard";
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;

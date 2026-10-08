@@ -12,10 +12,12 @@ import {
 } from "recharts";
 import type { CategoryPoint } from "@/lib/analysis";
 import { CATEGORY_COLORS, CHART_INK } from "@/lib/chartColors";
+import { CATEGORY_LABELS } from "@/lib/types";
 
 export default function CategoryBarChart({ data }: { data: CategoryPoint[] }) {
   const chartData = data.map((d) => ({
     category: d.category,
+    label: CATEGORY_LABELS[d.category],
     weighted: d.weighted ?? 0,
     hasData: d.weighted !== null,
   }));
@@ -25,7 +27,7 @@ export default function CategoryBarChart({ data }: { data: CategoryPoint[] }) {
       <BarChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
         <CartesianGrid stroke={CHART_INK.grid} vertical={false} />
         <XAxis
-          dataKey="category"
+          dataKey="label"
           tick={{ fill: CHART_INK.muted, fontSize: 12 }}
           axisLine={{ stroke: CHART_INK.axis }}
           tickLine={false}

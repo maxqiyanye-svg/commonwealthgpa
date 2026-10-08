@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { logout } from "@/app/auth/actions";
 
-export default function Nav({ active }: { active: "dashboard" | "courses" }) {
+export default function Nav({ active }: { active: "dashboard" | "courses" | "grades" }) {
   return (
     <header className="border-b border-line">
       <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -19,6 +19,12 @@ export default function Nav({ active }: { active: "dashboard" | "courses" }) {
               className={active === "courses" ? "text-ink font-medium" : "text-ink-secondary"}
             >
               Courses
+            </Link>
+            <Link
+              href="/grades"
+              className={active === "grades" ? "text-ink font-medium" : "text-ink-secondary"}
+            >
+              Grades
             </Link>
           </nav>
         </div>

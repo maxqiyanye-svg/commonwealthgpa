@@ -145,7 +145,7 @@
   },
   {
     "name": "French 1",
-    "level": "Regular",
+    "level": "H",
     "credits": 1,
     "category": "Language"
   },
@@ -205,7 +205,7 @@
   },
   {
     "name": "Latin 1",
-    "level": "Regular",
+    "level": "H",
     "credits": 1,
     "category": "Language"
   },
@@ -223,7 +223,7 @@
   },
   {
     "name": "Latin 4",
-    "level": "Regular",
+    "level": "H",
     "credits": 1,
     "category": "Language"
   },
@@ -259,19 +259,19 @@
   },
   {
     "name": "Mandarin 5",
-    "level": "Regular",
+    "level": "H",
     "credits": 1,
     "category": "Language"
   },
   {
     "name": "Mandarin 6",
-    "level": "Regular",
+    "level": "H",
     "credits": 1,
     "category": "Language"
   },
   {
     "name": "Mandarin 7",
-    "level": "Regular",
+    "level": "H",
     "credits": 1,
     "category": "Language"
   },
@@ -463,19 +463,19 @@
   },
   {
     "name": "Beginning Acting",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Advancing Acting",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Chorus",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
@@ -487,116 +487,116 @@
   },
   {
     "name": "Orchestra",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Chamber Music",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Jazz Ensemble",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Beginning Photography",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Advancing Photography",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Drawing and Painting 1",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Advancing Drawing and Painting",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Sequential Arts",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Life Drawing 1",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Advancing Life Drawing",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Beginning Printmaking",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Advancing Printmaking",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Beginning Ceramics",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Advancing Ceramics",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Sculpture",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
     "category": "Arts"
   },
   {
     "name": "Ninth-Grade Seminar",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
-    "category": "Specialty"
+    "category": "Electives"
   },
   {
     "name": "The Purposes of Education",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.25,
-    "category": "Specialty"
+    "category": "Electives"
   },
   {
     "name": "College and Senior Seminar",
-    "level": "Regular",
+    "level": "H",
     "credits": 0,
-    "category": "Specialty"
+    "category": "Electives"
   },
   {
     "name": "Capstone Project",
-    "level": "Regular",
+    "level": "H",
     "credits": 0.5,
-    "category": "Specialty"
+    "category": "Electives"
   }
 ]

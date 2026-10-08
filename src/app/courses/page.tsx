@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import Nav from "@/components/Nav";
 import type { Course } from "@/lib/types";
-import { CATEGORIES } from "@/lib/types";
+import { CATEGORIES, CATEGORY_LABELS } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/chartColors";
 import { deleteCourse } from "./actions";
 
@@ -30,7 +30,7 @@ export default async function CoursesPage() {
           <h1 className="text-lg font-semibold">Courses</h1>
           <Link
             href="/courses/new"
-            className="rounded-lg bg-cat-english text-white text-sm px-4 py-2"
+            className="rounded-lg bg-accent text-white text-sm px-4 py-2"
           >
             + Add course
           </Link>
@@ -43,7 +43,7 @@ export default async function CoursesPage() {
                 className="inline-block w-2.5 h-2.5 rounded-full"
                 style={{ background: CATEGORY_COLORS[cat] }}
               />
-              {cat}
+              {CATEGORY_LABELS[cat]}
             </span>
           ))}
         </div>
@@ -68,7 +68,7 @@ export default async function CoursesPage() {
                         {c.name}
                       </Link>
                       <p className="text-xs text-ink-secondary">
-                        {c.category} · {c.level} · {c.credits} credit{c.credits === 1 ? "" : "s"} ·{" "}
+                        {CATEGORY_LABELS[c.category]} · {c.level} · {c.credits} credit{c.credits === 1 ? "" : "s"} ·{" "}
                         {c.whole_year ? "Whole Year" : `${c.semester} semester`}
                       </p>
                     </div>

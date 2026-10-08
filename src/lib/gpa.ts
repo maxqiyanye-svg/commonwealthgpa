@@ -17,11 +17,10 @@ const UNWEIGHTED_POINTS: Record<Letter, number> = {
   F: 0.0,
 };
 
-// At Commonwealth, every course carries at least an Honors-level weight, so
-// "Regular" and "H" get the same +0.5 floor. AP and AP-equivalent-or-beyond
-// (APE) courses get the full +1.0 bonus.
+// At Commonwealth, every course is Honors-level or above — every course
+// gets at least the +0.5 floor. AP and AP-equivalent-or-beyond (APE)
+// courses get the full +1.0 bonus.
 const WEIGHT_BONUS: Record<Level, number> = {
-  Regular: 0.5,
   H: 0.5,
   AP: 1.0,
   APE: 1.0,

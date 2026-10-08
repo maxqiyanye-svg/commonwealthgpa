@@ -43,7 +43,7 @@ export default function LoginPage({
           </div>
           <button
             type="submit"
-            className="w-full rounded-lg bg-cat-english text-white py-2 text-sm font-medium"
+            className="w-full rounded-lg bg-accent text-white py-2 text-sm font-medium"
           >
             Log in
           </button>
@@ -51,7 +51,7 @@ export default function LoginPage({
 
         <p className="mt-6 text-sm text-ink-secondary">
           No account yet?{" "}
-          <Link href="/signup" className="text-cat-english underline">
+          <Link href="/signup" className="text-accent underline">
             Sign up
           </Link>
         </p>

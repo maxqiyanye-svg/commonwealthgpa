@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CATEGORIES, LEVELS } from "@/lib/types";
-import type { CatalogCourse, Category, Level, Semester } from "@/lib/types";
+import { CATEGORIES, CATEGORY_LABELS } from "@/lib/types";
+import type { CatalogCourse, Category, Semester } from "@/lib/types";
+
+type Selected = Pick<CatalogCourse, "name" | "category" | "level" | "credits">;
 
 export default function CourseForm({
   catalog,
@@ -10,15 +12,13 @@ export default function CourseForm({
   defaultSchoolYear,
   initial,
   submitLabel = "Add course",
+  redirectTo,
 }: {
   catalog: CatalogCourse[];
   action: (formData: FormData) => void;
   defaultSchoolYear: string;
-  initial?: {
-    name: string;
-    category: Category;
-    level: Level;
-    credits: number;
+  redirectTo?: "/dashboard" | "/courses";
+  initial?: Selected & {
     whole_year: boolean;
     semester: Semester | null;
     school_year: string;
@@ -27,10 +27,9 @@ export default function CourseForm({
 }) {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<Category | "All">("All");
-  const [name, setName] = useState(initial?.name ?? "");
-  const [category, setCategory] = useState<Category>(initial?.category ?? "English");
-  const [level, setLevel] = useState<Level>(initial?.level ?? "Regular");
-  const [credits, setCredits] = useState(initial?.credits ?? 1);
+  const [selected, setSelected] = useState<Selected | null>(
+    initial ? { name: initial.name, category: initial.category, level: initial.level, credits: initial.credits } : null
+  );
   const [wholeYear, setWholeYear] = useState(initial?.whole_year ?? true);
   const [semester, setSemester] = useState<Semester>(initial?.semester ?? "Fall");
   const [schoolYear, setSchoolYear] = useState(initial?.school_year ?? defaultSchoolYear);
@@ -42,20 +41,12 @@ export default function CourseForm({
       .slice(0, 30);
   }, [catalog, categoryFilter, query]);
 
-  function pickCatalogCourse(c: CatalogCourse) {
-    setName(c.name);
-    setCategory(c.category);
-    setLevel(c.level);
-    setCredits(c.credits);
-    setQuery("");
-  }
-
   return (
     <div className="grid md:grid-cols-2 gap-6">
       <div className="card p-6">
-        <h2 className="font-medium mb-1">Pick from the Commonwealth catalog</h2>
+        <h2 className="font-medium mb-1">Pick a course from the Commonwealth catalog</h2>
         <p className="text-sm text-ink-secondary mb-4">
-          Optional — search, click a course to fill in the form, then adjust and save.
+          Courses come from the catalog only — search, then click one to select it.
         </p>
         <div className="flex gap-2 mb-3">
           <input
@@ -73,7 +64,7 @@ export default function CourseForm({
             <option value="All">All</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
-                {c}
+                {CATEGORY_LABELS[c]}
               </option>
             ))}
           </select>
@@ -83,11 +74,18 @@ export default function CourseForm({
             <li key={c.id}>
               <button
                 type="button"
-                onClick={() => pickCatalogCourse(c)}
-                className="w-full text-left py-2 text-sm hover:text-cat-english"
+                onClick={() =>
+                  setSelected({ name: c.name, category: c.category, level: c.level, credits: c.credits })
+                }
+                className={`w-full text-left py-2 text-sm hover:text-accent ${
+                  selected?.name === c.name ? "text-accent font-medium" : ""
+                }`}
               >
                 {c.name}
-                <span className="text-ink-muted"> — {c.category} · {c.level} · {c.credits}cr</span>
+                <span className="text-ink-muted">
+                  {" "}
+                  — {CATEGORY_LABELS[c.category]} · {c.level} · {c.credits}cr
+                </span>
               </button>
             </li>
           ))}
@@ -98,77 +96,40 @@ export default function CourseForm({
       </div>
 
       <form action={action} className="card p-6 space-y-4">
-        <h2 className="font-medium">Course details</h2>
+        {redirectTo && <input type="hidden" name="redirect_to" value={redirectTo} />}
+
+        {selected ? (
+          <>
+            <input type="hidden" name="name" value={selected.name} />
+            <input type="hidden" name="category" value={selected.category} />
+            <input type="hidden" name="level" value={selected.level} />
+            <input type="hidden" name="credits" value={selected.credits} />
+            <div>
+              <p className="text-xs text-ink-muted uppercase tracking-wide mb-1">Selected course</p>
+              <p className="font-medium">{selected.name}</p>
+              <p className="text-sm text-ink-secondary">
+                {CATEGORY_LABELS[selected.category]} · {selected.level} · {selected.credits} credit
+                {selected.credits === 1 ? "" : "s"}
+              </p>
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-ink-secondary">
+            No course selected yet — pick one from the catalog on the left.
+          </p>
+        )}
 
         <div>
-          <label className="block text-sm mb-1">Name</label>
+          <label className="block text-sm mb-1">School year</label>
           <input
-            name="name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+            type="text"
+            name="school_year"
+            placeholder="2026-2027"
+            value={schoolYear}
+            onChange={(e) => setSchoolYear(e.target.value)}
             required
             className="w-full rounded-lg border border-line bg-transparent px-3 py-2 text-sm"
           />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm mb-1">Category</label>
-            <select
-              name="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value as Category)}
-              className="w-full rounded-lg border border-line bg-transparent px-3 py-2 text-sm"
-            >
-              {CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm mb-1">Level</label>
-            <select
-              name="level"
-              value={level}
-              onChange={(e) => setLevel(e.target.value as Level)}
-              className="w-full rounded-lg border border-line bg-transparent px-3 py-2 text-sm"
-            >
-              {LEVELS.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm mb-1">Credits</label>
-            <input
-              type="number"
-              step="0.25"
-              min="0"
-              name="credits"
-              value={credits}
-              onChange={(e) => setCredits(Number(e.target.value))}
-              className="w-full rounded-lg border border-line bg-transparent px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">School year</label>
-            <input
-              type="text"
-              name="school_year"
-              placeholder="2026-2027"
-              value={schoolYear}
-              onChange={(e) => setSchoolYear(e.target.value)}
-              required
-              className="w-full rounded-lg border border-line bg-transparent px-3 py-2 text-sm"
-            />
-          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -202,7 +163,8 @@ export default function CourseForm({
 
         <button
           type="submit"
-          className="w-full rounded-lg bg-cat-english text-white py-2 text-sm font-medium"
+          disabled={!selected}
+          className="w-full rounded-lg bg-accent text-white py-2 text-sm font-medium disabled:opacity-40"
         >
           {submitLabel}
         </button>

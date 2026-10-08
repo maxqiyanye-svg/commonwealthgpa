@@ -4,14 +4,14 @@ import type { Category } from "./types";
 // reassigned based on which categories are present, so a category always
 // reads as the same color everywhere in the app.
 export const CATEGORY_COLORS: Record<Category, string> = {
-  English: "#2a78d6", // blue
+  English: "#e34948", // red
   History: "#eb6834", // orange
-  Humanities: "#1baf7a", // aqua
+  Humanities: "#1baf7a", // teal (not one Max named — picked to stay distinct)
   Language: "#eda100", // yellow
-  Science: "#e87ba4", // magenta
-  Mathematics: "#008300", // green
-  Arts: "#4a3aa7", // violet
-  Specialty: "#e34948", // red
+  Science: "#008300", // green
+  Mathematics: "#2a78d6", // blue
+  Arts: "#4a3aa7", // purple
+  Electives: "#767672", // gray
 };
 
 export const SERIES_UNWEIGHTED = "#2a78d6"; // blue

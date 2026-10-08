@@ -12,6 +12,10 @@ export async function createCourse(formData: FormData) {
   if (!user) redirect("/login");
 
   const wholeYear = formData.get("whole_year") === "on";
+  // Where to land after a successful add — /courses/new sends you back to
+  // /courses, but the onboarding form sends you on to /dashboard instead.
+  // Allowlisted to just these two so this can't be used as an open redirect.
+  const redirectTo = formData.get("redirect_to") === "/dashboard" ? "/dashboard" : "/courses";
 
   const { error } = await supabase.from("courses").insert({
     user_id: user!.id,
@@ -25,12 +29,14 @@ export async function createCourse(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/courses/new?error=${encodeURIComponent(error.message)}`);
+    const backTo = redirectTo === "/dashboard" ? "/onboarding" : "/courses/new";
+    redirect(`${backTo}?error=${encodeURIComponent(error.message)}`);
   }
 
   revalidatePath("/courses");
   revalidatePath("/dashboard");
-  redirect("/courses");
+  revalidatePath("/onboarding");
+  redirect(redirectTo);
 }
 
 export async function updateCourse(courseId: string, formData: FormData) {

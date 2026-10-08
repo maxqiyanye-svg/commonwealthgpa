@@ -5,6 +5,7 @@ import GpaTrendChart from "@/components/charts/GpaTrendChart";
 import CategoryBarChart from "@/components/charts/CategoryBarChart";
 import { buildTimeline, currentGpa, categoryBreakdown, assess } from "@/lib/analysis";
 import type { Course, Grade } from "@/lib/types";
+import { CATEGORY_LABELS } from "@/lib/types";
 
 export default async function DashboardPage() {
   const supabase = createClient();
@@ -70,14 +71,14 @@ export default async function DashboardPage() {
         <section className="card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-medium">Courses</h2>
-            <Link href="/courses" className="text-sm text-cat-english underline">
+            <Link href="/courses" className="text-sm text-accent underline">
               Manage courses →
             </Link>
           </div>
           {courseList.length === 0 ? (
             <p className="text-sm text-ink-secondary">
               You haven&apos;t added any courses yet.{" "}
-              <Link href="/courses/new" className="text-cat-english underline">
+              <Link href="/courses/new" className="text-accent underline">
                 Add your first course
               </Link>
               .
@@ -90,7 +91,7 @@ export default async function DashboardPage() {
                     {c.name}
                   </Link>
                   <span className="text-ink-secondary">
-                    {c.category} · {c.level} · {c.whole_year ? "Whole Year" : c.semester}
+                    {CATEGORY_LABELS[c.category]} · {c.level} · {c.whole_year ? "Whole Year" : c.semester}
                   </span>
                 </li>
               ))}

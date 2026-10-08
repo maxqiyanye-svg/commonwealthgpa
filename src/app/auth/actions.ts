@@ -16,16 +16,25 @@ export async function login(formData: FormData) {
   redirect("/dashboard");
 }
 
+const REQUIRED_EMAIL_DOMAIN = "@commschool.org";
+
 export async function signup(formData: FormData) {
-  const email = String(formData.get("email") || "");
+  const email = String(formData.get("email") || "").trim();
   const password = String(formData.get("password") || "");
   const fullName = String(formData.get("full_name") || "");
+  const gradeLevel = String(formData.get("grade_level") || "");
+
+  if (!email.toLowerCase().endsWith(REQUIRED_EMAIL_DOMAIN)) {
+    redirect(
+      `/signup?error=${encodeURIComponent("Please use your Commonwealth School email.")}`
+    );
+  }
 
   const supabase = createClient();
   const { error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: fullName } },
+    options: { data: { full_name: fullName, grade_level: gradeLevel } },
   });
 
   if (error) {
