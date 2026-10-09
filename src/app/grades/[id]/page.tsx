@@ -7,6 +7,7 @@ import type { Assignment, Course, GradeCategory, Period } from "@/lib/types";
 import { ALL_PERIODS, CATEGORY_LABELS } from "@/lib/types";
 import { compositeForPeriod } from "@/lib/gradeCompute";
 import { pickCommentary } from "@/lib/commentary";
+import CategoryQuickPicks from "@/components/CategoryQuickPicks";
 
 const TIER_LABELS: Record<string, string> = {
   excellent: "Excellent",
@@ -103,10 +104,14 @@ export default async function GradesCoursePage({
           <p className={`text-xs mb-4 ${weightSum === 100 ? "text-ink-muted" : "text-status-warning"}`}>
             Weights add up to {weightSum}%{weightSum !== 100 ? " — should usually total 100%" : ""}.
           </p>
+          {courseRow.category !== "Arts" && (
+            <CategoryQuickPicks targetNameId="category-name-input" targetWeightId="category-weight-input" />
+          )}
           <form action={addCategory.bind(null, courseRow.id)} className="flex gap-2 items-end">
             <div className="flex-1">
               <label className="block text-xs text-ink-muted mb-1">Category name</label>
               <input
+                id="category-name-input"
                 name="name"
                 required
                 placeholder="Homework"
@@ -116,6 +121,7 @@ export default async function GradesCoursePage({
             <div className="w-28">
               <label className="block text-xs text-ink-muted mb-1">Weight %</label>
               <input
+                id="category-weight-input"
                 type="number"
                 name="weight"
                 step="0.5"

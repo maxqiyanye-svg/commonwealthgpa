@@ -3,11 +3,16 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isAdminAuthed } from "@/lib/adminAuth";
 
-// This admin page is intentionally open (no login check) — it only edits
-// the shared catalog_courses reference table, not anyone's personal data.
+async function requireAdmin() {
+  if (!(await isAdminAuthed())) {
+    redirect("/admin");
+  }
+}
 
 export async function addCatalogCourse(formData: FormData) {
+  await requireAdmin();
   const supabase = createClient();
 
   const { error } = await supabase.from("catalog_courses").insert({
@@ -26,6 +31,7 @@ export async function addCatalogCourse(formData: FormData) {
 }
 
 export async function updateCatalogCourse(id: string, formData: FormData) {
+  await requireAdmin();
   const supabase = createClient();
 
   const { error } = await supabase
@@ -47,6 +53,7 @@ export async function updateCatalogCourse(id: string, formData: FormData) {
 }
 
 export async function deleteCatalogCourse(id: string) {
+  await requireAdmin();
   const supabase = createClient();
   await supabase.from("catalog_courses").delete().eq("id", id);
   revalidatePath("/admin");

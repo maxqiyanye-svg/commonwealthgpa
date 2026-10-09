@@ -1,18 +1,13 @@
 import Link from "next/link";
-import {
-  isAdminGradesAuthed,
-  adminGradesLogin,
-  adminGradesLogout,
-  fetchAllGrades,
-  type AdminGradeRow,
-} from "./actions";
+import { isAdminAuthed, adminLogin, adminLogout } from "@/lib/adminAuth";
+import { fetchAllGrades, type AdminGradeRow } from "./actions";
 
 export default async function AdminGradesPage({
   searchParams,
 }: {
   searchParams: { error?: string };
 }) {
-  const authed = await isAdminGradesAuthed();
+  const authed = await isAdminAuthed();
 
   if (!authed) {
     return (
@@ -25,7 +20,8 @@ export default async function AdminGradesPage({
         {searchParams.error && (
           <p className="text-sm text-status-critical">{searchParams.error}</p>
         )}
-        <form action={adminGradesLogin} className="space-y-3">
+        <form action={adminLogin} className="space-y-3">
+          <input type="hidden" name="redirect_to" value="/admin/grades" />
           <input
             type="password"
             name="password"
@@ -72,7 +68,7 @@ export default async function AdminGradesPage({
             <Link href="/admin" className="text-sm text-accent underline whitespace-nowrap">
               ← Catalog admin
             </Link>
-            <form action={adminGradesLogout}>
+            <form action={adminLogout}>
               <button type="submit" className="text-sm text-ink-muted underline">
                 Log out
               </button>

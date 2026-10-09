@@ -4,12 +4,47 @@ import { CATEGORIES, CATEGORY_LABELS, LEVELS } from "@/lib/types";
 import type { CatalogCourse, Category, Level } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/chartColors";
 import { addCatalogCourse, updateCatalogCourse, deleteCatalogCourse } from "./actions";
+import { isAdminAuthed, adminLogin, adminLogout } from "@/lib/adminAuth";
 
 export default async function AdminPage({
   searchParams,
 }: {
   searchParams: { error?: string };
 }) {
+  const authed = await isAdminAuthed();
+
+  if (!authed) {
+    return (
+      <div className="max-w-sm mx-auto px-4 py-20 space-y-4">
+        <h1 className="text-lg font-semibold">Commonwealth GPA — Admin</h1>
+        <p className="text-sm text-ink-secondary">
+          Password-protected. Catalog editing and student grades both live behind this
+          one login.
+        </p>
+        {searchParams.error && (
+          <p className="text-sm text-status-critical">{searchParams.error}</p>
+        )}
+        <form action={adminLogin} className="space-y-3">
+          <input type="hidden" name="redirect_to" value="/admin" />
+          <input
+            type="password"
+            name="password"
+            placeholder="Admin password"
+            required
+            autoFocus
+            className="w-full rounded-lg border border-line bg-transparent px-3 py-2 text-sm"
+          />
+          <button
+            type="submit"
+            className="w-full rounded-lg bg-accent text-white py-2 text-sm font-medium"
+          >
+            Enter
+          </button>
+        </form>
+      </div>
+    );
+  }
+
   const supabase = createClient();
   const { data: catalog } = await supabase
     .from("catalog_courses")
@@ -32,8 +67,8 @@ export default async function AdminPage({
           <div>
             <span className="font-semibold">Commonwealth GPA — Catalog Admin</span>
             <p className="text-xs text-ink-muted mt-1">
-              Not password-protected yet. Changes here update the shared catalog everyone
-              picks from when adding a course — not anyone's personal grades.
+              Password-protected. Changes here update the shared catalog everyone picks
+              from when adding a course — not anyone's personal grades.
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -41,8 +76,13 @@ export default async function AdminPage({
               View stats →
             </Link>
             <Link href="/admin/grades" className="text-sm text-accent underline whitespace-nowrap">
-              Student grades (password) →
+              Student grades →
             </Link>
+            <form action={adminLogout}>
+              <button type="submit" className="text-sm text-ink-muted underline whitespace-nowrap">
+                Log out
+              </button>
+            </form>
           </div>
         </div>
       </header>
