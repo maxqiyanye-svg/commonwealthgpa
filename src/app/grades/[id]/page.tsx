@@ -7,6 +7,7 @@ import type { Assignment, Course, GradeCategory, Period } from "@/lib/types";
 import { ALL_PERIODS, CATEGORY_LABELS } from "@/lib/types";
 import { compositeForPeriod } from "@/lib/gradeCompute";
 import { pickCommentary } from "@/lib/commentary";
+import { pickCourseQuote } from "@/lib/courseQuotes";
 import CategoryQuickPicks from "@/components/CategoryQuickPicks";
 
 const TIER_LABELS: Record<string, string> = {
@@ -52,10 +53,13 @@ export default async function GradesCoursePage({
   const weightSum = categoryList.reduce((sum, c) => sum + c.weight, 0);
   const composite = compositeForPeriod(categoryList, assignmentList, period);
   const assignmentsInPeriod = assignmentList.filter((a) => a.period === period);
+  // Prefer a quote written for this exact course; fall back to the subject-wide pool.
+  const seed = `${courseRow.id}:${period}`;
+  const courseQuote =
+    composite.pct !== null ? pickCourseQuote(courseRow.name, composite.pct, seed) : null;
   const commentary =
-    composite.pct !== null
-      ? pickCommentary(courseRow.category, composite.pct, `${courseRow.id}:${period}`)
-      : null;
+    courseQuote ??
+    (composite.pct !== null ? pickCommentary(courseRow.category, composite.pct, seed) : null);
 
   return (
     <div>
