@@ -7,6 +7,7 @@ generator. Run the create-table SQL in the Supabase SQL Editor first.
 """
 import json
 import pathlib
+import ssl
 import sys
 import urllib.error
 import urllib.request
@@ -15,6 +16,12 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 
 from gen_course_quotes import build_rows  # noqa: E402
+
+# python.org's Python on macOS often can't find root certificates. macOS ships
+# the system ones at /etc/ssl/cert.pem, so use those when they exist.
+SSL_CONTEXT = None
+if pathlib.Path("/etc/ssl/cert.pem").exists():
+    SSL_CONTEXT = ssl.create_default_context(cafile="/etc/ssl/cert.pem")
 
 
 def load_env():
@@ -39,7 +46,7 @@ def call(method, url, key, body=None, prefer=None):
     data = json.dumps(body).encode("utf-8") if body is not None else None
     req = urllib.request.Request(url, data=data, method=method, headers=headers)
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req, context=SSL_CONTEXT) as resp:
             return resp.read()
     except urllib.error.HTTPError as err:
         detail = err.read().decode("utf-8", errors="replace")
