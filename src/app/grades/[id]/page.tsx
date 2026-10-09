@@ -57,9 +57,16 @@ export default async function GradesCoursePage({
   const seed = `${courseRow.id}:${period}`;
   const courseQuote =
     composite.pct !== null ? pickCourseQuote(courseRow.name, composite.pct, seed) : null;
-  const commentary =
-    courseQuote ??
-    (composite.pct !== null ? pickCommentary(courseRow.category, composite.pct, seed) : null);
+  const fallback =
+    !courseQuote && composite.pct !== null
+      ? pickCommentary(courseRow.category, composite.pct, seed)
+      : null;
+  const commentaryLabel = courseQuote
+    ? `Score ${courseQuote.label}`
+    : fallback
+      ? `${TIER_LABELS[fallback.tier]} — ${CATEGORY_LABELS[courseRow.category]}`
+      : "";
+  const commentaryText = courseQuote?.text ?? fallback?.text ?? null;
 
   return (
     <div>
@@ -166,12 +173,12 @@ export default async function GradesCoursePage({
             <p className="text-sm text-ink-muted mb-4">No assignments logged for this period yet.</p>
           )}
 
-          {commentary && (
+          {commentaryText && (
             <div className="card p-4 border-l-4 border-l-accent mb-6">
               <p className="text-xs text-ink-muted mb-1">
-                {TIER_LABELS[commentary.tier]} — {CATEGORY_LABELS[courseRow.category]}
+                {commentaryLabel}
               </p>
-              <p className="text-sm">{commentary.text}</p>
+              <p className="text-sm">{commentaryText}</p>
             </div>
           )}
 
