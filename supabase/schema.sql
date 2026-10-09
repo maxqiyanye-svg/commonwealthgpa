@@ -295,13 +295,37 @@ as $$
     g.period,
     g.letter,
     g.score
-  from public.grades g
-  join public.courses c on c.id = g.course_id
-  join public.profiles p on p.id = g.user_id
-  join auth.users u on u.id = g.user_id
+  -- Starts from every signed-up user (left joins out to courses, then
+  -- grades) so a student with no courses yet, or courses with no grades
+  -- yet, still shows up — not just students who've entered data.
+  from public.profiles p
+  join auth.users u on u.id = p.id
+  left join public.courses c on c.user_id = p.id
+  left join public.grades g on g.course_id = c.id
   order by p.full_name, c.name, g.period;
 $$;
 
 revoke all on function public.admin_grades_detail() from public;
 revoke all on function public.admin_grades_detail() from anon, authenticated;
 grant execute on function public.admin_grades_detail() to service_role;
+
+-- ---------------------------------------------------------------------------
+-- course_quotes: per-course grade feedback (200 per course). Read-only for
+-- everyone signed in; written only by scripts/upload_course_quotes.py using
+-- the service-role key.
+-- ---------------------------------------------------------------------------
+create table if not exists public.course_quotes (
+  id bigint generated always as identity primary key,
+  course_name text not null,
+  label text not null,
+  min_pct numeric not null,
+  max_pct numeric not null,
+  body text not null
+);
+
+create index if not exists course_quotes_course_name_idx on public.course_quotes (course_name);
+
+alter table public.course_quotes enable row level security;
+
+create policy "course_quotes_read_all" on public.course_quotes
+  for select using (true);

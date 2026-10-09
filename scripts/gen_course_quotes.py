@@ -1,31 +1,32 @@
 #!/usr/bin/env python3
-"""Generates 100 course-specific grade quotes for every catalog course.
+"""Builds the grade-feedback quotes for every catalog course.
 
-Reads course names + categories from supabase/seed.sql and writes
-src/lib/courseQuotes.ts. Each course gets:
+Reads course names + categories from supabase/seed.sql and produces 200
+quotes per course:
 
-  * 50 "band" quotes: broad feedback for the four grade bands
-    (excellent / good / needs improvement / at risk).
-  * 50 "interval" quotes: feedback written for each 3-point score interval,
-    from below 60% up to 99-100%, with 3-4 quotes per interval.
+  * 80 "band" quotes across four broad grade bands (excellent, good,
+    needs improvement, at risk).
+  * 120 "interval" quotes: 8 per 3-point score interval, from below 60%
+    up to 99-100%.
 
-Every quote names the course. The app shows the narrowest interval quote
-that matches a student's score, falling back to band quotes if needed.
+Quotes can contain the placeholder {weakest}. At runtime the app replaces
+it with the student's lowest-scoring category in that period (for example
+"Tests"), or "your weakest category" if there isn't enough data yet. That is
+what makes the advice point at the student's real grade data.
 
-Deterministic: the same seed.sql always produces the same output file.
+Output goes to Supabase by running scripts/upload_course_quotes.py.
+Deterministic: the same seed.sql always produces the same rows.
 """
 import itertools
-import json
 import pathlib
 import random
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SEED = ROOT / "supabase" / "seed.sql"
-OUT = ROOT / "src" / "lib" / "courseQuotes.ts"
 
 # ---------------------------------------------------------------------------
-# Subject vocabulary
+# Subject vocabulary: the graded things students actually see in each subject.
 # ---------------------------------------------------------------------------
 
 ITEMS = {
@@ -40,7 +41,7 @@ ITEMS = {
                  "conjugation practice", "culture projects"],
     "Science": ["lab reports", "lab technique", "problem sets", "unit tests",
                 "data analysis", "scientific-method write-ups", "diagrams", "reading quizzes"],
-    "Mathematics": ["problem sets", "showing work step by step", "quizzes", "unit tests",
+    "Mathematics": ["problem sets", "homework", "quizzes", "unit tests",
                     "proofs", "timed assessments", "practice problems", "concept checks"],
     "Arts": ["technique practice", "portfolio pieces", "rehearsal", "critique participation",
              "sketchbook entries", "projects", "ensemble attendance", "compositions"],
@@ -68,15 +69,15 @@ CLOSERS = [
 ]
 
 # ---------------------------------------------------------------------------
-# Band quotes (50 per course): four broad bands.
+# Band quotes: 80 per course across four broad bands.
+# (tier, quotes per course, min, max, label)
 # ---------------------------------------------------------------------------
 
 BAND_BANDS = [
-    # (tier, quotes per course, min, max, label)
-    ("excellent", 15, 90, 100.01, "Excellent"),
-    ("good", 15, 80, 90, "Good"),
-    ("needs_improvement", 12, 70, 80, "Needs improvement"),
-    ("at_risk", 8, 0, 70, "At risk"),
+    ("excellent", 25, 90, 100.01, "Excellent"),
+    ("good", 25, 80, 90, "Good"),
+    ("needs_improvement", 18, 70, 80, "Needs improvement"),
+    ("at_risk", 12, 0, 70, "At risk"),
 ]
 
 BAND_PIECES = {
@@ -170,376 +171,313 @@ BAND_PIECES = {
     },
 }
 
+# One extra action per band that points at the student's weakest category.
+WEAKEST_BAND = {
+    "excellent": "Keep {weakest} at this level, since it is your lowest-scoring category and the place to protect the grade.",
+    "good": "Work on {weakest} first, since it is your lowest-scoring category and the most likely place for the next band.",
+    "needs_improvement": "Start with {weakest}, your lowest-scoring category, and give it a fixed weekly time.",
+    "at_risk": "Get help on {weakest} first, since it is the lowest-scoring category pulling this grade down.",
+}
+
 # ---------------------------------------------------------------------------
-# Interval quotes (50 per course): one feedback set per 3-point score interval.
-# Each entry: (min, max, label, count, openers, actions). Ranges are [min, max).
-# Openers and actions are written for that exact interval, so feedback at
-# 91% reads differently from feedback at 88%.
+# Interval quotes: 8 per 3-point score interval, 15 intervals.
+# Each entry: (min, max, label, openers, actions). Ranges are [min, max).
 # ---------------------------------------------------------------------------
 
 INTERVALS = [
-    (0, 60, "Below 60%", 4,
+    (0, 60, "Below 60%",
      [
          "{course} is below 60% right now, so it needs an urgent plan rather than small tweaks.",
          "At under 60% in {course}, the first job is stopping the slide before chasing a better grade.",
          "A {course} grade under 60% is a signal to meet your teacher, not to wait it out.",
          "{course} sitting under 60% means missing work matters more than any single score.",
+         "{course} is under 60% for now, and the fastest fix is getting the missing work in.",
+         "Below 60% in {course}, the grade is hurting, but it can still be pulled back.",
+         "{course} at this level usually comes from a few big gaps, not the whole quarter.",
      ],
      [
          "Make a list of every missing or failed {item} and ask which can still be turned in.",
          "Ask your teacher what the fastest route back to passing in {course} looks like.",
          "Rebuild {item} first, since it likely carries real weight in this grade.",
          "Set up a standing weekly check-in on {item} for the rest of the quarter.",
+         "Email your teacher a plan for {item} this week, even before you have every answer.",
+         "Find out whether {item} can be made up in a shorter format.",
+         "Sit down with someone who has passed {course} and ask how they handled {item}.",
+         "Start with {weakest}, since it is the lowest-scoring part of {course} and the fastest place to recover.",
      ]),
-    (60, 63, "60–62%", 3,
+    (60, 63, "60–62%",
      [
          "{course} at 60–62% is technically passing, but there is almost no margin left.",
          "You're sitting on the bottom edge of passing in {course}, around 60–62%.",
          "At 60–62% in {course}, one bad {item} could drop you into failing territory.",
+         "At 60–62% in {course}, you have passed the line, but barely.",
+         "{course} sits just above failing at 60–62%, so the next few grades matter a lot.",
+         "You're one weak check away from failing {course} at 60–62%.",
      ],
      [
          "Your next {item} is the highest-leverage thing you can do this week.",
          "Ask whether any {item} can be redone or corrected for partial credit.",
          "Aim for a clear jump, not a narrow escape, by putting extra time into {item}.",
+         "Prioritize {item} above everything else in {course} until the grade has a buffer.",
+         "Pick one {skill} habit and use it on every piece of {item} this week.",
+         "Ask your teacher what a passing-with-buffer target would look like for {item}.",
+         "Focus on {weakest} first, since it is the category most likely to drop you below passing.",
      ]),
-    (63, 66, "63–65%", 3,
+    (63, 66, "63–65%",
      [
          "{course} at 63–65% is a D-range grade, and it is still well within reach.",
          "At 63–65% in {course}, you're just above the failing line with real room to climb.",
          "Your {course} grade of 63–65% says the fundamentals need work before anything advanced.",
+         "{course} at 63–65% is a D-range grade with clear space to recover.",
+         "Your {course} grade of 63–65% says the work is partly there, not yet reliable.",
+         "At 63–65% in {course}, you have a real opening to rebuild before the next report.",
      ],
      [
          "Fix the basics on {item} before moving on to anything more advanced.",
          "Go to office hours with specific questions about your most recent {item}.",
          "Find the one category in {course} dragging this number down and attack it first.",
+         "Go back to the first unit of {course} and check whether the foundation holds up on {item}.",
+         "Write down one question about each graded {item} and bring it to the teacher.",
+         "Schedule two short sessions a week on {item} rather than one long cram.",
+         "Look closely at {weakest}, the lowest-scoring part of {course}, and find the one pattern costing you points.",
      ]),
-    (66, 69, "66–68%", 3,
+    (66, 69, "66–68%",
      [
          "{course} at 66–68% has a clear path up, and it runs through {item}.",
          "Sitting at 66–68% in {course}, you're close enough to C-range that a few fixes can show quickly.",
          "A 66–68% in {course} is a grade that moves with focused effort over just a few weeks.",
+         "{course} at 66–68% is a grade you can lift with a few steady weeks.",
+         "At 66–68%, {course} has more upside than the grade suggests.",
+         "Your {course} work is closer to C than D, and the next few {item} can prove it.",
      ],
      [
          "Redo any {item} where you lost points on a concept rather than a careless slip.",
          "Set a target of two strong {item} in a row before you call this fixed.",
          "Use your teacher's comments on {item} as a checklist for the next one.",
+         "Compare your best and worst {item} side by side to see what changed.",
+         "Commit to finishing every {item} completely, even when it feels unnecessary.",
+         "Use your last graded {item} as a benchmark and beat it by a few points.",
+         "Check {weakest} against the feedback you got, since it's the category with the most room to grow.",
      ]),
-    (69, 72, "69–71%", 4,
+    (69, 72, "69–71%",
      [
          "{course} at 69–71% sits right at the C-minus line, so every point is contested.",
          "A 69–71% in {course} is fragile: the next check could push it either way.",
          "You're hovering just above the C-minus cutoff in {course}, at 69–71%.",
          "At 69–71%, {course} is one of the grades most sensitive to a single good week.",
+         "{course} at 69–71% is at the C-minus edge, where habits decide the next grade.",
+         "A 69–71% in {course} shows effort is landing, just not consistently yet.",
+         "At 69–71%, {course} is one of the classes most likely to move with one good unit.",
      ],
      [
          "Put your strongest effort into {item}, since small gains there move the grade fastest.",
          "Be deliberate about {skill} this week instead of just doing more of the same.",
          "Keep a running tally of {item} scores so you can see whether you're climbing or slipping.",
          "Ask one specific question per week about {item} so you stop repeating the same mistake.",
+         "Lock in the routine that produced your best {item} and repeat it for the next one.",
+         "Before each {item}, spend ten minutes reviewing the mistakes from the last one.",
+         "Ask for a quick check-in on {item} so you know exactly what counts most.",
+         "Put {weakest} at the top of your list, since it's the lowest-scoring part of your {course} grade.",
      ]),
-    (72, 75, "72–74%", 3,
+    (72, 75, "72–74%",
      [
          "{course} at 72–74% is a solid C, with real room to climb back into B territory.",
          "You're in the mid-C range in {course}, around 72–74%, which means the next band is close.",
          "At 72–74%, {course} is stable, and a few clean results would change the picture.",
+         "{course} at 72–74% is a comfortable C with real room above it.",
+         "At 72–74%, {course} rewards steady work more than big bursts of effort.",
+         "You're mid-C in {course} at 72–74%, and the path to B-minus is short.",
      ],
      [
          "Focus on consistency in {item}; a few clean results in a row would change the picture.",
          "Look at which {item} cost you the most points and check whether the pattern repeats.",
          "Plan one focused session on {item} before each assessment in {course}.",
+         "Choose one {item} each week to treat as a must-get-right task.",
+         "Track your scores on {item} for three weeks and look for the trend.",
+         "Ask whether any {item} can count for a higher score if you revise it.",
+         "Pick {weakest} as your focus for the next two assessments, since it's the category pulling your average down most.",
      ]),
-    (75, 78, "75–77%", 3,
+    (75, 78, "75–77%",
      [
          "{course} at 75–77% is a steady C-plus, and you're closer to B-minus than it may feel.",
          "At 75–77% in {course}, the grade is stable but hasn't yet earned its ceiling.",
          "Your {course} grade of 75–77% is on the cusp of B-minus territory.",
+         "At 75–77%, {course} is a dependable C-plus that could easily become B-minus.",
+         "{course} at 75–77% is solid enough that small wins on {item} would show quickly.",
+         "Your {course} grade of 75–77% reflects understanding that is close to the next band.",
      ],
      [
          "Recheck your {item} against the rubric before turning it in.",
          "A modest increase on {item} would move this into the next band.",
          "Talk with your teacher about one concrete change that would lift {item} by a full band.",
+         "Look for the last two {item} where you lost points on details, not ideas.",
+         "Set a small goal on {item} for the next check and track whether you hit it.",
+         "Use office hours once a week to test your understanding of {skill}.",
+         "Set one concrete goal for {weakest}, your lowest-scoring category, before the next check.",
      ]),
-    (78, 81, "78–80%", 4,
+    (78, 81, "78–80%",
      [
          "{course} at 78–80% is a respectable B-minus with clear room to improve.",
          "You're near the bottom of the B-minus range in {course}, at 78–80%.",
          "A 78–80% in {course} shows you know the material, but the grade undersells you a little.",
          "At 78–80%, {course} is one or two solid assessments from the next band.",
+         "{course} at 78–80% is a B-minus that sits right on the edge of improvement.",
+         "At 78–80%, you understand {course} well enough that the grade should be higher.",
+         "Your {course} grade of 78–80% is a good base to build the next band from.",
      ],
      [
          "Tighten up {item} so a single mistake doesn't cost you a full band.",
          "Find where your points are going on {item} and fix the most common error first.",
          "Keep the habits that got you here and add one deliberate practice of {skill}.",
          "Ask for a second look at your last {item} to see whether the grade undersells your understanding.",
+         "Reread your feedback on {item} and rewrite one answer to show the stronger version.",
+         "Check every {item} against the instructions before you hand it in.",
+         "Practice {skill} on problems you have not seen before, not only the familiar ones.",
+         "Work on {weakest} before anything else, since it is where your {course} grade has the most room to move.",
      ]),
-    (81, 84, "81–83%", 3,
+    (81, 84, "81–83%",
      [
          "{course} at 81–83% is a solid B-range grade, and you're close to the next step up.",
          "A grade between 81 and 83 in {course} means you're handling the material well.",
          "At 81–83%, your {course} work is reliable, with a few spots holding it back.",
+         "{course} at 81–83% is a clear B-range grade that is close to a stronger one.",
+         "At 81–83%, {course} shows you are consistent, and the next band is not far off.",
+         "Your {course} grade of 81–83% is a solid foundation for a higher result.",
      ],
      [
          "Push {item} from good to great by checking your work before you submit.",
          "Use feedback from recent {item} to remove the one habit costing you the most points.",
          "Spend a little extra time on {item} the night before, not the week before.",
+         "Find the one habit on {item} that costs you the most points and fix it first.",
+         "Give {item} a final read-through with fresh eyes before you submit it.",
+         "Ask your teacher for one example of a top-band {item} to compare with yours.",
+         "Review {weakest} for small repeated errors, since that is where the next band is most likely to come from.",
      ]),
-    (84, 87, "84–86%", 3,
+    (84, 87, "84–86%",
      [
          "{course} at 84–86% is a strong B, with a real chance to move into A territory.",
          "You're comfortably in the B range in {course}, at 84–86%.",
          "At 84–86%, {course} is a grade that rewards steady, deliberate work.",
+         "{course} at 84–86% is a strong B with a real chance at the next band.",
+         "At 84–86%, you're doing the work in {course}; now it needs to get sharper.",
+         "Your {course} grade of 84–86% is comfortably in B territory and rising.",
      ],
      [
          "Target {item} as the place to earn the last few points of the next band.",
          "Ask a classmate who scored higher on {item} how they approached the work.",
          "Keep the routine steady and tighten the one category where you lost the most points.",
+         "Push {item} from correct to clear, so the reasoning shows as well as the answer.",
+         "Look at the top scores on {item} in class and identify what they did differently.",
+         "Spend your extra study time on {skill} instead of re-reading notes.",
+         "Target {weakest} for a step up, since it is the lowest-scoring part of {course} right now.",
      ]),
-    (87, 90, "87–89%", 4,
+    (87, 90, "87–89%",
      [
          "{course} at 87–89% is a high B-plus, and one or two clean results could reach A-minus.",
          "Sitting at 87–89% in {course} means the upper B band is yours to claim.",
          "At 87–89%, {course} is close enough to A-minus that precision now matters more than effort.",
          "Your {course} grade of 87–89% reflects strong, consistent understanding.",
+         "{course} at 87–89% is high B-plus, and the next step is about precision.",
+         "At 87–89%, the grade in {course} is close enough to A-minus that details decide it.",
+         "Your {course} work at 87–89% is strong, and a few refinements could move it up.",
      ],
      [
          "Focus on the details of {item}; at this level, precision matters more than effort.",
          "Review your last three {item} for small errors that add up over time.",
          "Use {skill} as your goal for the next assessment to see the grade actually move.",
          "Raise your bar on {item} from done to polished.",
+         "Make {item} a place where you show your thinking, not just the final answer.",
+         "Look for one way to deepen {item} beyond what was required this quarter.",
+         "Check whether your {item} feedback mentions clarity, and fix that pattern first.",
+         "Refine {weakest} for precision, since it is the category holding back an A-minus.",
      ]),
-    (90, 93, "90–92%", 3,
+    (90, 93, "90–92%",
      [
          "{course} at 90–92% is an A-minus, and it's clear you have the material down.",
          "You're on the edge of A-minus in {course} at 90–92%, a strong result.",
          "At 90–92%, your {course} work is clearly at the top of the B-plus-to-A range.",
+         "{course} at 90–92% is an A-minus, which means your understanding is clearly solid.",
+         "At 90–92%, {course} is among your strongest classes, and it shows.",
+         "Your {course} grade of 90–92% is the result of consistent, careful work.",
      ],
      [
          "Protect this grade by staying consistent on {item} through the end of the quarter.",
          "Consider taking on a harder version of {item} to push past the A-minus line.",
          "Help a classmate on {item}; explaining it will firm up your {skill}.",
+         "Keep the same level of care on {item} for the rest of the quarter.",
+         "Set a stretch goal on {item} that would push you into the A band.",
+         "Explain one {skill} concept from {course} to a friend to lock it in.",
+         "Keep {weakest} strong through the end of the quarter, since it is the category with the least margin.",
      ]),
-    (93, 96, "93–95%", 3,
+    (93, 96, "93–95%",
      [
          "{course} at 93–95% is a solid A, and it reflects real command of the material.",
          "A 93–95% in {course} puts you firmly in the A band.",
          "At 93–95%, {course} is one of your strongest results this quarter.",
+         "{course} at 93–95% is a solid A that reflects real mastery of the material.",
+         "At 93–95%, {course} shows the depth of understanding teachers look for.",
+         "Your {course} grade of 93–95% is firmly in A territory.",
      ],
      [
          "Keep doing what works on {item}, and write down the routine so you can repeat it.",
          "Look for stretch opportunities in {item} that go beyond the assignment.",
          "Use this grade as a baseline and aim to keep {item} at this level.",
+         "Keep the process that works for {item} and write it down so it stays repeatable.",
+         "Take on one optional {item} challenge to test how far the understanding goes.",
+         "Look for ways to connect {skill} in {course} to other classes you're taking.",
+         "Maintain {weakest} at this level, even though it is your lowest-scoring category in {course}.",
      ]),
-    (96, 99, "96–98%", 3,
+    (96, 99, "96–98%",
      [
          "{course} at 96–98% is near the top of the scale, and it shows in your work.",
          "Your {course} grade of 96–98% is exceptional, and the margin for error is tiny.",
          "At 96–98%, {course} is a result most students never reach.",
+         "{course} at 96–98% is near the top of the scale, and the consistency is remarkable.",
+         "At 96–98%, {course} is an exceptional result, with very little left to fix.",
+         "Your {course} grade of 96–98% puts you among the strongest students in this class.",
      ],
      [
          "Protect this by keeping {item} clean; one careless slip is what stands between you and the top.",
          "Share what works on {item} with peers; teaching it cements the {skill} you've built.",
          "Look for a way to show {skill} beyond what the rubric asks for in {item}.",
+         "Guard {item} against small, avoidable slips, since those are the only thing left to fix.",
+         "Offer to help a classmate on {item}; explaining it keeps {skill} sharp.",
+         "Ask for one advanced problem or reading in {course} to keep the challenge up.",
+         "Look at {weakest} for the one remaining slip, since it is your lowest-scoring category in {course}.",
      ]),
-    (99, 100.01, "99–100%", 4,
+    (99, 100.01, "99–100%",
      [
          "{course} at 99–100% is essentially perfect, and it reflects exceptional work.",
          "A 99–100% in {course} is a rare result. You've mastered the material.",
          "At 99–100%, {course} is as close to flawless as grades get.",
          "Your {course} grade of 99–100% says the work has been near-perfect all quarter.",
+         "{course} at 99–100% is about as strong as a grade gets, and it shows real mastery.",
+         "At 99–100%, your {course} work is near-flawless from start to finish.",
      ],
      [
-         "Keep the same discipline on {item} that got you here, even when the grade feels settled.",
+         "Keep {item} at this standard even though the grade already feels secure.",
          "Consider mentoring others on {item}; you have the expertise to help them.",
          "Take the extra challenge in {item} that the class doesn't require.",
          "Use this strength in {skill} to pursue work well beyond the course.",
+         "Keep the same discipline on {item} that got you here, even when the grade feels settled.",
+         "Consider leading a discussion or project on {skill} to share what you have learned.",
+         "Keep {weakest} at the same standard, even though it is your lowest-scoring category in {course}.",
      ]),
 ]
 
+INTERVAL_COUNT = 8  # quotes per 3-point interval
+BAND_CLOSERS = CLOSERS
 
-# Extra openers/actions per interval, added in round two. Each interval now
-# gets its own second set of wording, so the doubled quotes stay distinct.
-INTERVAL_EXTRA = {
-    "Below 60%": (
-        [
-            "{course} is under 60% for now, and the fastest fix is getting the missing work in.",
-            "Below 60% in {course}, the grade is hurting, but it can still be pulled back.",
-            "{course} at this level usually comes from a few big gaps, not the whole quarter.",
-        ],
-        [
-            "Email your teacher a plan for {item} this week, even before you have every answer.",
-            "Find out whether {item} can be made up in a shorter format.",
-            "Sit down with someone who has passed {course} and ask how they handled {item}.",
-        ],
-    ),
-    "60–62%": (
-        [
-            "At 60–62% in {course}, you have passed the line, but barely.",
-            "{course} sits just above failing at 60–62%, so the next few grades matter a lot.",
-            "You're one weak check away from failing {course} at 60–62%.",
-        ],
-        [
-            "Prioritize {item} above everything else in {course} until the grade has a buffer.",
-            "Pick one {skill} habit and use it on every piece of {item} this week.",
-            "Ask your teacher what a passing-with-buffer target would look like for {item}.",
-        ],
-    ),
-    "63–65%": (
-        [
-            "{course} at 63–65% is a D-range grade with clear space to recover.",
-            "Your {course} grade of 63–65% says the work is partly there, not yet reliable.",
-            "At 63–65% in {course}, you have a real opening to rebuild before the next report.",
-        ],
-        [
-            "Go back to the first unit of {course} and check whether the foundation holds up on {item}.",
-            "Write down one question about each graded {item} and bring it to the teacher.",
-            "Schedule two short sessions a week on {item} rather than one long cram.",
-        ],
-    ),
-    "66–68%": (
-        [
-            "{course} at 66–68% is a grade you can lift with a few steady weeks.",
-            "At 66–68%, {course} has more upside than the grade suggests.",
-            "Your {course} work is closer to C than D, and the next few {item} can prove it.",
-        ],
-        [
-            "Compare your best and worst {item} side by side to see what changed.",
-            "Commit to finishing every {item} completely, even when it feels unnecessary.",
-            "Use your last graded {item} as a benchmark and beat it by a few points.",
-        ],
-    ),
-    "69–71%": (
-        [
-            "{course} at 69–71% is at the C-minus edge, where habits decide the next grade.",
-            "A 69–71% in {course} shows effort is landing, just not consistently yet.",
-            "At 69–71%, {course} is one of the classes most likely to move with one good unit.",
-        ],
-        [
-            "Lock in the routine that produced your best {item} and repeat it for the next one.",
-            "Before each {item}, spend ten minutes reviewing the mistakes from the last one.",
-            "Ask for a quick check-in on {item} so you know exactly what counts most.",
-        ],
-    ),
-    "72–74%": (
-        [
-            "{course} at 72–74% is a comfortable C with real room above it.",
-            "At 72–74%, {course} rewards steady work more than big bursts of effort.",
-            "You're mid-C in {course} at 72–74%, and the path to B-minus is short.",
-        ],
-        [
-            "Choose one {item} each week to treat as a must-get-right task.",
-            "Track your scores on {item} for three weeks and look for the trend.",
-            "Ask whether any {item} can count for a higher score if you revise it.",
-        ],
-    ),
-    "75–77%": (
-        [
-            "At 75–77%, {course} is a dependable C-plus that could easily become B-minus.",
-            "{course} at 75–77% is solid enough that small wins on {item} would show quickly.",
-            "Your {course} grade of 75–77% reflects understanding that is close to the next band.",
-        ],
-        [
-            "Look for the last two {item} where you lost points on details, not ideas.",
-            "Set a small goal on {item} for the next check and track whether you hit it.",
-            "Use office hours once a week to test your understanding of {skill}.",
-        ],
-    ),
-    "78–80%": (
-        [
-            "{course} at 78–80% is a B-minus that sits right on the edge of improvement.",
-            "At 78–80%, you understand {course} well enough that the grade should be higher.",
-            "Your {course} grade of 78–80% is a good base to build the next band from.",
-        ],
-        [
-            "Reread your feedback on {item} and rewrite one answer to show the stronger version.",
-            "Check every {item} against the instructions before you hand it in.",
-            "Practice {skill} on problems you have not seen before, not only the familiar ones.",
-        ],
-    ),
-    "81–83%": (
-        [
-            "{course} at 81–83% is a clear B-range grade that is close to a stronger one.",
-            "At 81–83%, {course} shows you are consistent, and the next band is not far off.",
-            "Your {course} grade of 81–83% is a solid foundation for a higher result.",
-        ],
-        [
-            "Find the one habit on {item} that costs you the most points and fix it first.",
-            "Give {item} a final read-through with fresh eyes before you submit it.",
-            "Ask your teacher for one example of a top-band {item} to compare with yours.",
-        ],
-    ),
-    "84–86%": (
-        [
-            "{course} at 84–86% is a strong B with a real chance at the next band.",
-            "At 84–86%, you're doing the work in {course}; now it needs to get sharper.",
-            "Your {course} grade of 84–86% is comfortably in B territory and rising.",
-        ],
-        [
-            "Push {item} from correct to clear, so the reasoning shows as well as the answer.",
-            "Look at the top scores on {item} in class and identify what they did differently.",
-            "Spend your extra study time on {skill} instead of re-reading notes.",
-        ],
-    ),
-    "87–89%": (
-        [
-            "{course} at 87–89% is high B-plus, and the next step is about precision.",
-            "At 87–89%, the grade in {course} is close enough to A-minus that details decide it.",
-            "Your {course} work at 87–89% is strong, and a few refinements could move it up.",
-        ],
-        [
-            "Make {item} a place where you show your thinking, not just the final answer.",
-            "Look for one way to deepen {item} beyond what was required this quarter.",
-            "Check whether your {item} feedback mentions clarity, and fix that pattern first.",
-        ],
-    ),
-    "90–92%": (
-        [
-            "{course} at 90–92% is an A-minus, which means your understanding is clearly solid.",
-            "At 90–92%, {course} is among your strongest classes, and it shows.",
-            "Your {course} grade of 90–92% is the result of consistent, careful work.",
-        ],
-        [
-            "Keep the same level of care on {item} for the rest of the quarter.",
-            "Set a stretch goal on {item} that would push you into the A band.",
-            "Explain one {skill} concept from {course} to a friend to lock it in.",
-        ],
-    ),
-    "93–95%": (
-        [
-            "{course} at 93–95% is a solid A that reflects real mastery of the material.",
-            "At 93–95%, {course} shows the depth of understanding teachers look for.",
-            "Your {course} grade of 93–95% is firmly in A territory.",
-        ],
-        [
-            "Keep the process that works for {item} and write it down so it stays repeatable.",
-            "Take on one optional {item} challenge to test how far the understanding goes.",
-            "Look for ways to connect {skill} in {course} to other classes you're taking.",
-        ],
-    ),
-    "96–98%": (
-        [
-            "{course} at 96–98% is near the top of the scale, and the consistency is remarkable.",
-            "At 96–98%, {course} is an exceptional result, with very little left to fix.",
-            "Your {course} grade of 96–98% puts you among the strongest students in this class.",
-        ],
-        [
-            "Guard {item} against small, avoidable slips, since those are the only thing left to fix.",
-            "Offer to help a classmate on {item}; explaining it keeps {skill} sharp.",
-            "Ask for one advanced problem or reading in {course} to keep the challenge up.",
-        ],
-    ),
-    "99–100%": (
-        [
-            "{course} at 99–100% is about as strong as a grade gets, and it shows real mastery.",
-            "At 99–100%, your {course} work is near-flawless from start to finish.",
-            "Your {course} grade of 99–100% is an outstanding result that reflects deep understanding.",
-        ],
-        [
-            "Keep {item} at this standard even though the grade already feels secure.",
-            "Consider leading a discussion or project on {skill} to share what you have learned.",
-            "Seek out a deeper source or challenge in {course} that goes past the syllabus.",
-        ],
-    ),
-}
+
+class _KeepPlaceholders(dict):
+    """format_map helper: unknown placeholders like {weakest} are left as-is."""
+
+    def __missing__(self, key):
+        return "{" + key + "}"
+
+
+def fill(template, course, item, skill):
+    return template.format_map(_KeepPlaceholders(course=course, item=item, skill=skill))
 
 
 def parse_courses():
@@ -550,108 +488,58 @@ def parse_courses():
     return [(name.replace("''", "'"), category) for name, category in rows]
 
 
-def fill(template, course, item, skill):
-    return template.format(course=course, item=item, skill=skill)
-
-
-def band_quotes(course, category, rng):
+def band_rows(course, category, rng):
     items = ITEMS[category]
     skill = SKILL[category]
     out = []
     for tier, count, lo, hi, label in BAND_BANDS:
         pieces = BAND_PIECES[tier]
-        combos = list(itertools.product(pieces["openers"], pieces["actions"], CLOSERS))
+        actions = pieces["actions"] + [WEAKEST_BAND[tier]]
+        combos = list(itertools.product(pieces["openers"], actions, BAND_CLOSERS))
         for opener, action, closer in rng.sample(combos, count):
             item = rng.choice(items)
-            text = " ".join(fill(p, course, item, skill) for p in (opener, action)) + closer
-            out.append({"label": label, "min": lo, "max": hi, "text": text})
+            body = " ".join(fill(p, course, item, skill) for p in (opener, action)) + closer
+            out.append({"course_name": course, "label": label, "min_pct": lo, "max_pct": hi, "body": body})
     return out
 
 
-def interval_quotes(course, category, rng):
+def interval_rows(course, category, rng):
     items = ITEMS[category]
     skill = SKILL[category]
     out = []
-    for lo, hi, label, count, openers, actions in INTERVALS:
-        extra_openers, extra_actions = INTERVAL_EXTRA[label]
-        openers = openers + extra_openers
-        actions = actions + extra_actions
-        total = count * 2  # round one + round two quotes for this interval
+    for lo, hi, label, openers, actions in INTERVALS:
         combos = list(itertools.product(openers, actions, CLOSERS))
-        if len(combos) < total:
+        if len(combos) < INTERVAL_COUNT:
             raise SystemExit(f"Not enough combinations for {label}")
-        for opener, action, closer in rng.sample(combos, total):
+        for opener, action, closer in rng.sample(combos, INTERVAL_COUNT):
             item = rng.choice(items)
-            text = " ".join(fill(p, course, item, skill) for p in (opener, action)) + closer
-            out.append({"label": label, "min": lo, "max": hi, "text": text})
+            body = " ".join(fill(p, course, item, skill) for p in (opener, action)) + closer
+            out.append({"course_name": course, "label": label, "min_pct": lo, "max_pct": hi, "body": body})
     return out
 
 
-def main():
+def build_rows():
+    """Returns every quote row for every course, ready to upload to Supabase."""
     courses = parse_courses()
-    lines = [
-        "// AUTO-GENERATED by scripts/gen_course_quotes.py — do not hand-edit.",
-        "// Regenerate with: python3 scripts/gen_course_quotes.py",
-        "",
-        "export interface CourseQuote {",
-        "  label: string;",
-        "  min: number;",
-        "  max: number;",
-        "  text: string;",
-        "}",
-        "",
-        "export const COURSE_QUOTES: Record<string, CourseQuote[]> = {",
-    ]
-
-    seen_names = set()
-    per_course = sum(c for _, c, *_ in BAND_BANDS) + sum(i[3] * 2 for i in INTERVALS)
+    seen = set()
+    rows = []
     for course, category in courses:
-        if course in seen_names:
+        if course in seen:
             raise SystemExit(f"Duplicate course name in seed: {course}")
-        seen_names.add(course)
+        seen.add(course)
         rng = random.Random(course)
-        quotes = band_quotes(course, category, rng) + interval_quotes(course, category, rng)
-        assert len(quotes) == per_course == 150, course
-        assert len({q["text"] for q in quotes}) == per_course, f"repeat text in {course}"
-        lines.append(f"  {json.dumps(course)}: [")
-        for q in quotes:
-            lines.append(
-                "    { label: %s, min: %s, max: %s, text: %s },"
-                % (json.dumps(q["label"], ensure_ascii=False), q["min"], q["max"], json.dumps(q["text"], ensure_ascii=False))
-            )
-        lines.append("  ],")
+        course_rows = band_rows(course, category, rng) + interval_rows(course, category, rng)
+        assert len(course_rows) == 200, course
+        assert len({r["body"] for r in course_rows}) == 200, f"repeat text in {course}"
+        rows.extend(course_rows)
+    return rows
 
-    lines += [
-        "};",
-        "",
-        "/**",
-        " * Pick the narrowest-range quote that covers the student's score, so a",
-        " * 91% gets the 90-92% feedback rather than broad A-range advice. Same",
-        " * course + same seed always returns the same quote.",
-        " */",
-        "export function pickCourseQuote(",
-        "  courseName: string,",
-        "  pct: number,",
-        "  seed: string",
-        "): CourseQuote | null {",
-        "  const all = COURSE_QUOTES[courseName];",
-        "  if (!all) return null;",
-        "  const pool = all.filter((q) => pct >= q.min && pct < q.max);",
-        "  if (pool.length === 0) return null;",
-        "  const narrowest = Math.min(...pool.map((q) => q.max - q.min));",
-        "  const best = pool.filter((q) => q.max - q.min === narrowest);",
-        "  let hash = 0;",
-        "  for (let i = 0; i < seed.length; i++) {",
-        "    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;",
-        "  }",
-        "  return best[hash % best.length];",
-        "}",
-        "",
-    ]
 
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text("\n".join(lines), encoding="utf-8")
-    print(f"Wrote {len(courses)} courses x {per_course} quotes = {len(courses) * per_course} entries to {OUT.relative_to(ROOT)}")
+def main():
+    rows = build_rows()
+    courses = len({r["course_name"] for r in rows})
+    print(f"Built {len(rows)} quotes for {courses} courses ({len(rows) // courses} per course).")
+    print("Next: python3 scripts/upload_course_quotes.py")
 
 
 if __name__ == "__main__":

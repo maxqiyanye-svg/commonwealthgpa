@@ -7,7 +7,7 @@ import type { Assignment, Course, GradeCategory, Period } from "@/lib/types";
 import { ALL_PERIODS, CATEGORY_LABELS } from "@/lib/types";
 import { compositeForPeriod } from "@/lib/gradeCompute";
 import { pickCommentary } from "@/lib/commentary";
-import { pickCourseQuote } from "@/lib/courseQuotes";
+import { pickCourseQuote } from "@/lib/courseQuotesDb";
 import CategoryQuickPicks from "@/components/CategoryQuickPicks";
 
 const TIER_LABELS: Record<string, string> = {
@@ -55,8 +55,28 @@ export default async function GradesCoursePage({
   const assignmentsInPeriod = assignmentList.filter((a) => a.period === period);
   // Prefer a quote written for this exact course; fall back to the subject-wide pool.
   const seed = `${courseRow.id}:${period}`;
+
+  // The student's lowest-scoring category this period, so quotes can name it.
+  let weakest: string | null = null;
+  let weakestPct = Infinity;
+  for (const cat of categoryList) {
+    const rows = assignmentsInPeriod.filter(
+      (a) => a.category_id === cat.id && a.points_possible > 0
+    );
+    if (rows.length === 0) continue;
+    const earned = rows.reduce((sum, a) => sum + a.score, 0);
+    const possible = rows.reduce((sum, a) => sum + a.points_possible, 0);
+    const catPct = (earned / possible) * 100;
+    if (catPct < weakestPct) {
+      weakestPct = catPct;
+      weakest = cat.name;
+    }
+  }
+
   const courseQuote =
-    composite.pct !== null ? pickCourseQuote(courseRow.name, composite.pct, seed) : null;
+    composite.pct !== null
+      ? await pickCourseQuote(supabase, courseRow.name, composite.pct, seed, weakest)
+      : null;
   const fallback =
     !courseQuote && composite.pct !== null
       ? pickCommentary(courseRow.category, composite.pct, seed)
