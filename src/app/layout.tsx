@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import MadeByBadge from "@/components/MadeByBadge";
 
 export const metadata: Metadata = {
   title: "Commonwealth GPA",
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="font-sans min-h-screen">{children}</body>
+      <body className="font-sans min-h-screen">
+        {children}
+        <MadeByBadge />
+      </body>
     </html>
   );
 }
