@@ -256,3 +256,52 @@ as $$
 $$;
 
 grant execute on function public.admin_stats() to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- admin_grades_detail(): every student's actual per-course, per-period
+-- grades, for the password-gated /admin/grades page (teachers + research
+-- use). Unlike admin_stats(), this returns real names/emails/grades, so it
+-- is deliberately NOT granted to anon/authenticated — only the server-side
+-- service-role client (which the Next.js app only calls after the admin
+-- password check passes) can call it. Never grant this to anon.
+-- ---------------------------------------------------------------------------
+create or replace function public.admin_grades_detail()
+returns table (
+  student_name text,
+  student_email text,
+  grade_level int,
+  course_name text,
+  category text,
+  level text,
+  credits numeric,
+  school_year text,
+  period text,
+  letter text,
+  score numeric
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    p.full_name,
+    u.email,
+    p.grade_level,
+    c.name,
+    c.category,
+    c.level,
+    c.credits,
+    c.school_year,
+    g.period,
+    g.letter,
+    g.score
+  from public.grades g
+  join public.courses c on c.id = g.course_id
+  join public.profiles p on p.id = g.user_id
+  join auth.users u on u.id = g.user_id
+  order by p.full_name, c.name, g.period;
+$$;
+
+revoke all on function public.admin_grades_detail() from public;
+revoke all on function public.admin_grades_detail() from anon, authenticated;
+grant execute on function public.admin_grades_detail() to service_role;

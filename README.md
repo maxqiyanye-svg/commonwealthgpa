@@ -182,3 +182,18 @@ data/catalog.json     Source of truth for the seeded course catalog
 supabase/schema.sql   Tables, RLS policies, triggers
 supabase/seed.sql     Generated from data/catalog.json — catalog_courses rows
 ```
+
+## Admin grades (password-protected)
+
+`/admin/grades` shows every student's actual grades, course by course — for
+teachers and research use. Unlike `/admin` and `/admin/stats`, this one is
+behind a password (`ADMIN_PASSWORD`) because it returns real names, emails,
+and grades.
+
+The password check happens in the Next.js server action, but the real
+protection is at the database level: `admin_grades_detail()` (in
+`supabase/schema.sql`) is only granted to the Postgres `service_role`, never
+to `anon`/`authenticated` — so even someone who finds the public anon key
+can't call it directly. That's why this needs a second secret,
+`SUPABASE_SERVICE_ROLE_KEY` (Settings → API → `service_role` in Supabase —
+**never** put this one in a `NEXT_PUBLIC_` variable or client code).

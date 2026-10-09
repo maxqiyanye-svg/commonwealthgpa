@@ -36,9 +36,14 @@ export default async function AdminPage({
               picks from when adding a course — not anyone's personal grades.
             </p>
           </div>
-          <Link href="/admin/stats" className="text-sm text-accent underline whitespace-nowrap">
-            View stats →
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/admin/stats" className="text-sm text-accent underline whitespace-nowrap">
+              View stats →
+            </Link>
+            <Link href="/admin/grades" className="text-sm text-accent underline whitespace-nowrap">
+              Student grades (password) →
+            </Link>
+          </div>
         </div>
       </header>
 
