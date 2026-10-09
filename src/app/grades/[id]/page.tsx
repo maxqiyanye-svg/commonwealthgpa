@@ -6,6 +6,14 @@ import { addCategory, deleteCategory, addAssignment, deleteAssignment } from "..
 import type { Assignment, Course, GradeCategory, Period } from "@/lib/types";
 import { ALL_PERIODS, CATEGORY_LABELS } from "@/lib/types";
 import { compositeForPeriod } from "@/lib/gradeCompute";
+import { pickCommentary } from "@/lib/commentary";
+
+const TIER_LABELS: Record<string, string> = {
+  excellent: "Excellent",
+  good: "Good",
+  needs_improvement: "Needs improvement",
+  at_risk: "At risk",
+};
 
 const PERIOD_LABELS: Record<Period, string> = {
   Q1: "Quarter 1",
@@ -43,6 +51,10 @@ export default async function GradesCoursePage({
   const weightSum = categoryList.reduce((sum, c) => sum + c.weight, 0);
   const composite = compositeForPeriod(categoryList, assignmentList, period);
   const assignmentsInPeriod = assignmentList.filter((a) => a.period === period);
+  const commentary =
+    composite.pct !== null
+      ? pickCommentary(courseRow.category, composite.pct, `${courseRow.id}:${period}`)
+      : null;
 
   return (
     <div>
@@ -142,6 +154,15 @@ export default async function GradesCoursePage({
             </p>
           ) : (
             <p className="text-sm text-ink-muted mb-4">No assignments logged for this period yet.</p>
+          )}
+
+          {commentary && (
+            <div className="card p-4 border-l-4 border-l-accent mb-6">
+              <p className="text-xs text-ink-muted mb-1">
+                {TIER_LABELS[commentary.tier]} — {CATEGORY_LABELS[courseRow.category]}
+              </p>
+              <p className="text-sm">{commentary.text}</p>
+            </div>
           )}
 
           {categoryList.length === 0 ? (
