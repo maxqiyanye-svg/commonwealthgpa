@@ -6,12 +6,12 @@ export interface AdminGradeRow {
   student_name: string | null;
   student_email: string;
   grade_level: number | null;
-  course_name: string;
-  category: string;
-  level: string;
-  credits: number;
-  school_year: string;
-  period: string;
+  course_name: string | null;
+  category: string | null;
+  level: string | null;
+  credits: number | null;
+  school_year: string | null;
+  period: string | null;
   letter: string | null;
   score: number | null;
 }

@@ -79,51 +79,61 @@ export default async function AdminGradesPage({
 
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-8">
         <p className="text-sm text-ink-secondary">
-          {rows.length} grade entries across {byStudent.size} student
-          {byStudent.size === 1 ? "" : "s"}.
+          {byStudent.size} student{byStudent.size === 1 ? "" : "s"} signed up ·{" "}
+          {rows.filter((r) => r.period !== null).length} grade entries logged.
         </p>
 
-        {rows.length === 0 && (
-          <p className="text-sm text-ink-muted">No grades logged yet.</p>
+        {byStudent.size === 0 && (
+          <p className="text-sm text-ink-muted">No one has signed up yet.</p>
         )}
 
-        {[...byStudent.entries()].map(([email, studentRows]) => (
-          <section key={email} className="card p-4">
-            <h2 className="font-medium mb-3">
-              {studentRows[0].student_name || "(no name)"}{" "}
-              <span className="text-sm text-ink-muted font-normal">
-                {email}
-                {studentRows[0].grade_level ? ` · Grade ${studentRows[0].grade_level}` : ""}
-              </span>
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="text-left text-ink-muted border-b border-line">
-                    <th className="py-1 pr-4 font-normal">Course</th>
-                    <th className="py-1 pr-4 font-normal">Category</th>
-                    <th className="py-1 pr-4 font-normal">Level</th>
-                    <th className="py-1 pr-4 font-normal">Year</th>
-                    <th className="py-1 pr-4 font-normal">Period</th>
-                    <th className="py-1 pr-4 font-normal">Grade</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {studentRows.map((r, i) => (
-                    <tr key={i} className="border-b border-line/50">
-                      <td className="py-1 pr-4">{r.course_name}</td>
-                      <td className="py-1 pr-4">{r.category}</td>
-                      <td className="py-1 pr-4">{r.level}</td>
-                      <td className="py-1 pr-4">{r.school_year}</td>
-                      <td className="py-1 pr-4">{r.period}</td>
-                      <td className="py-1 pr-4">{r.letter ?? r.score ?? "—"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </section>
-        ))}
+        {[...byStudent.entries()].map(([email, studentRows]) => {
+          const hasCourses = studentRows.some((r) => r.course_name !== null);
+
+          return (
+            <section key={email} className="card p-4">
+              <h2 className="font-medium mb-3">
+                {studentRows[0].student_name || "(no name)"}{" "}
+                <span className="text-sm text-ink-muted font-normal">
+                  {email}
+                  {studentRows[0].grade_level ? ` · Grade ${studentRows[0].grade_level}` : ""}
+                </span>
+              </h2>
+              {!hasCourses ? (
+                <p className="text-xs text-ink-muted">No courses added yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse">
+                    <thead>
+                      <tr className="text-left text-ink-muted border-b border-line">
+                        <th className="py-1 pr-4 font-normal">Course</th>
+                        <th className="py-1 pr-4 font-normal">Category</th>
+                        <th className="py-1 pr-4 font-normal">Level</th>
+                        <th className="py-1 pr-4 font-normal">Year</th>
+                        <th className="py-1 pr-4 font-normal">Period</th>
+                        <th className="py-1 pr-4 font-normal">Grade</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {studentRows.map((r, i) => (
+                        <tr key={i} className="border-b border-line/50">
+                          <td className="py-1 pr-4">{r.course_name}</td>
+                          <td className="py-1 pr-4">{r.category}</td>
+                          <td className="py-1 pr-4">{r.level}</td>
+                          <td className="py-1 pr-4">{r.school_year}</td>
+                          <td className="py-1 pr-4">{r.period ?? "—"}</td>
+                          <td className="py-1 pr-4">
+                            {r.letter ?? (r.score !== null ? r.score : "no grade yet")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          );
+        })}
       </main>
     </div>
   );
