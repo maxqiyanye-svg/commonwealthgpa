@@ -6,7 +6,9 @@ import { redirect } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const COOKIE_NAME = "admin_grades_auth";
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7; // 1 week
+// Effectively "remember this device forever" — the only way back to the
+// password screen is clicking Log out, which deletes the cookie outright.
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 * 10; // 10 years
 
 function expectedToken(): string | null {
   const pw = process.env.ADMIN_PASSWORD;
