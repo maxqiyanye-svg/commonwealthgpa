@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { compositeForPeriod } from "@/lib/gradeCompute";
-import { ALL_PERIODS } from "@/lib/types";
+import { ALL_PERIODS, PERIOD_SOURCES } from "@/lib/types";
 import type { Assignment, GradeCategory, Period } from "@/lib/types";
 
 /** Recompute one period's composite grade from categories+assignments and
@@ -18,7 +18,7 @@ async function recomputeAndSave(
 ) {
   const [{ data: categories }, { data: assignments }] = await Promise.all([
     supabase.from("grade_categories").select("*").eq("course_id", courseId),
-    supabase.from("assignments").select("*").eq("course_id", courseId).eq("period", period),
+    supabase.from("assignments").select("*").eq("course_id", courseId).in("period", PERIOD_SOURCES[period]),
   ]);
 
   const result = compositeForPeriod(
@@ -122,7 +122,8 @@ export async function addAssignment(courseId: string, formData: FormData) {
     redirect(`/grades/${courseId}?error=${encodeURIComponent(error.message)}`);
   }
 
-  await recomputeAndSave(supabase, courseId, user!.id, period);
+  // Q1/Q2/S1 and Q3/Q4/S2 share data, so refresh every period in the course.
+  await Promise.all(ALL_PERIODS.map((p) => recomputeAndSave(supabase, courseId, user!.id, p)));
 
   revalidatePath(`/grades/${courseId}`);
   revalidatePath(`/courses/${courseId}`);
@@ -138,7 +139,7 @@ export async function deleteAssignment(courseId: string, assignmentId: string, p
   if (!user) redirect("/login");
 
   await supabase.from("assignments").delete().eq("id", assignmentId);
-  await recomputeAndSave(supabase, courseId, user!.id, period);
+  await Promise.all(ALL_PERIODS.map((p) => recomputeAndSave(supabase, courseId, user!.id, p)));
 
   revalidatePath(`/grades/${courseId}`);
   revalidatePath(`/courses/${courseId}`);

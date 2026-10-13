@@ -329,3 +329,23 @@ alter table public.course_quotes enable row level security;
 
 create policy "course_quotes_read_all" on public.course_quotes
   for select using (true);
+
+-- ---------------------------------------------------------------------------
+-- app_settings: small key/value config. school_year is set from the admin
+-- panel (written via service role) and read by everyone when adding courses.
+-- ---------------------------------------------------------------------------
+create table if not exists public.app_settings (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.app_settings enable row level security;
+
+drop policy if exists "app_settings_read_all" on public.app_settings;
+create policy "app_settings_read_all" on public.app_settings
+  for select using (true);
+
+insert into public.app_settings (key, value)
+values ('school_year', '2026-2027')
+on conflict (key) do nothing;

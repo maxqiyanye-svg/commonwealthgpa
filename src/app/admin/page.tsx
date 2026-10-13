@@ -3,13 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { CATEGORIES, CATEGORY_LABELS, LEVELS } from "@/lib/types";
 import type { CatalogCourse, Category, Level } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/chartColors";
-import { addCatalogCourse, updateCatalogCourse, deleteCatalogCourse } from "./actions";
+import { addCatalogCourse, updateCatalogCourse, deleteCatalogCourse, setSchoolYear } from "./actions";
+import { getSchoolYear } from "@/lib/schoolYear";
 import { isAdminAuthed, adminLogin, adminLogout } from "@/lib/adminAuth";
 
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: { error?: string; msg?: string };
 }) {
   const authed = await isAdminAuthed();
 
@@ -45,6 +46,7 @@ export default async function AdminPage({
     );
   }
 
+  const schoolYear = await getSchoolYear();
   const supabase = createClient();
   const { data: catalog } = await supabase
     .from("catalog_courses")
@@ -91,6 +93,37 @@ export default async function AdminPage({
         {searchParams.error && (
           <p className="text-sm text-status-critical">{searchParams.error}</p>
         )}
+
+        <section className="card p-6">
+          <h2 className="font-medium mb-1">School year</h2>
+          <p className="text-xs text-ink-muted mb-4">
+            Currently <strong className="text-ink">{schoolYear}</strong>. New courses default to this
+            year for every student.
+          </p>
+          {searchParams.msg && (
+            <p className="text-sm text-ink-secondary mb-4">{searchParams.msg}</p>
+          )}
+          <form action={setSchoolYear} className="flex flex-wrap gap-3 items-end">
+            <div>
+              <label className="block text-xs text-ink-muted mb-1">School year</label>
+              <input
+                name="school_year"
+                required
+                pattern="\d{4}-\d{4}"
+                placeholder="2026-2027"
+                defaultValue={schoolYear}
+                className="w-40 rounded-lg border border-line bg-transparent px-3 py-2 text-sm"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-xs text-ink-secondary pb-2">
+              <input type="checkbox" name="move_existing" value="yes" />
+              Also re-tag existing courses from {schoolYear} to the new year (fixes mistakes only)
+            </label>
+            <button type="submit" className="rounded-lg bg-accent text-white text-sm px-4 py-2">
+              Save year
+            </button>
+          </form>
+        </section>
 
         <section className="card p-6">
           <h2 className="font-medium mb-4">Add a catalog course</h2>

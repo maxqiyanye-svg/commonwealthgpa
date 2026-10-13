@@ -1,14 +1,9 @@
 import Nav from "@/components/Nav";
 import CourseForm from "@/components/CourseForm";
 import { createClient } from "@/lib/supabase/server";
+import { getSchoolYear } from "@/lib/schoolYear";
 import { createCourse } from "../actions";
 import type { CatalogCourse } from "@/lib/types";
-
-function defaultSchoolYear(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  return now.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
-}
 
 export default async function NewCoursePage({
   searchParams,
@@ -16,6 +11,7 @@ export default async function NewCoursePage({
   searchParams: { error?: string };
 }) {
   const supabase = createClient();
+  const schoolYear = await getSchoolYear();
   const { data: catalog } = await supabase
     .from("catalog_courses")
     .select("*")
@@ -33,7 +29,7 @@ export default async function NewCoursePage({
         <CourseForm
           catalog={(catalog ?? []) as CatalogCourse[]}
           action={createCourse}
-          defaultSchoolYear={defaultSchoolYear()}
+          defaultSchoolYear={schoolYear}
         />
       </main>
     </div>

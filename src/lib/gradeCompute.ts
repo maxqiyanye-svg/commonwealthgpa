@@ -1,4 +1,5 @@
 import type { Assignment, GradeCategory, Period } from "./types";
+import { PERIOD_SOURCES } from "./types";
 import { scoreToLetter, round2 } from "./gpa";
 
 export interface CategoryResult {
@@ -15,7 +16,7 @@ export function categoryResult(
   period: Period
 ): CategoryResult {
   const inPeriod = assignments.filter(
-    (a) => a.category_id === category.id && a.period === period
+    (a) => a.category_id === category.id && PERIOD_SOURCES[period].includes(a.period)
   );
   const earned = inPeriod.reduce((sum, a) => sum + a.score, 0);
   const possible = inPeriod.reduce((sum, a) => sum + a.points_possible, 0);

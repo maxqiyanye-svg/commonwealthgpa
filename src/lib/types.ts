@@ -47,6 +47,20 @@ export const QUARTERS: Period[] = ["Q1", "Q2", "Q3", "Q4"];
 export const SEMESTER_PERIODS: Period[] = ["S1", "S2"];
 export const ALL_PERIODS: Period[] = ["Q1", "Q2", "S1", "Q3", "Q4", "S2"];
 
+/**
+ * Which quarters' assignments feed each period's grade. Grades are cumulative
+ * across the whole year: Q2 and S1 cover Q1 + Q2, Q3 covers Q1..Q3, and Q4
+ * and S2 cover Q1..Q4.
+ */
+export const PERIOD_SOURCES: Record<Period, Period[]> = {
+  Q1: ["Q1"],
+  Q2: ["Q1", "Q2"],
+  S1: ["Q1", "Q2"],
+  Q3: ["Q1", "Q2", "Q3"],
+  Q4: ["Q1", "Q2", "Q3", "Q4"],
+  S2: ["Q1", "Q2", "Q3", "Q4"],
+};
+
 export type Letter =
   | "A+"
   | "A"

@@ -4,11 +4,14 @@ import Nav from "@/components/Nav";
 import { createClient } from "@/lib/supabase/server";
 import { addCategory, deleteCategory, addAssignment, deleteAssignment } from "../actions";
 import type { Assignment, Course, GradeCategory, Period } from "@/lib/types";
-import { ALL_PERIODS, CATEGORY_LABELS } from "@/lib/types";
+import { ALL_PERIODS, CATEGORY_LABELS, PERIOD_SOURCES } from "@/lib/types";
 import { compositeForPeriod } from "@/lib/gradeCompute";
 import { pickCommentary } from "@/lib/commentary";
 import { pickCourseQuote } from "@/lib/courseQuotesDb";
 import CategoryQuickPicks from "@/components/CategoryQuickPicks";
+import GradeTrendChart, { type GradeTrendPoint } from "@/components/charts/GradeTrendChart";
+import { CATEGORY_COLORS } from "@/lib/chartColors";
+import { placeInQuarter, quarterStarts } from "@/lib/schoolCalendar";
 
 const TIER_LABELS: Record<string, string> = {
   excellent: "Excellent",
@@ -60,8 +63,11 @@ export default async function GradesCoursePage({
   let weakest: string | null = null;
   let weakestPct = Infinity;
   for (const cat of categoryList) {
-    const rows = assignmentsInPeriod.filter(
-      (a) => a.category_id === cat.id && a.points_possible > 0
+    const rows = assignmentList.filter(
+      (a) =>
+        a.category_id === cat.id &&
+        PERIOD_SOURCES[period].includes(a.period) &&
+        a.points_possible > 0
     );
     if (rows.length === 0) continue;
     const earned = rows.reduce((sum, a) => sum + a.score, 0);
@@ -72,6 +78,21 @@ export default async function GradesCoursePage({
       weakest = cat.name;
     }
   }
+
+  // Running full-year grade after each logged assignment, placed on the school calendar.
+  const schoolYear = courseRow.school_year;
+  const placed = assignmentList
+    .filter((a) => ["Q1", "Q2", "Q3", "Q4"].includes(a.period))
+    .map((a) => ({ a, t: placeInQuarter(new Date(a.created_at), a.period, schoolYear).getTime() }))
+    .sort((x, y) => x.t - y.t);
+  const trend: GradeTrendPoint[] = [];
+  placed.forEach(({ a, t }, i) => {
+    const sofar = placed.slice(0, i + 1).map((p) => p.a);
+    const r = compositeForPeriod(categoryList, sofar, "Q4");
+    if (r.pct !== null && r.letter) trend.push({ t, pct: r.pct, letter: r.letter, label: a.name });
+  });
+  const qs = quarterStarts(schoolYear);
+  const quarterLines = (["Q1", "Q2", "Q3", "Q4"] as const).map((q) => ({ t: qs[q].getTime(), label: q }));
 
   const courseQuote =
     composite.pct !== null
@@ -166,6 +187,18 @@ export default async function GradesCoursePage({
               Add
             </button>
           </form>
+        </section>
+
+        <section className="card p-6">
+          <h2 className="font-medium mb-1">Grade over time</h2>
+          <p className="text-xs text-ink-muted mb-3">
+            Your running year grade after each assignment. Quarter dates are approximate.
+          </p>
+          <GradeTrendChart
+            data={trend}
+            quarterLines={quarterLines}
+            color={CATEGORY_COLORS[courseRow.category]}
+          />
         </section>
 
         <section className="card p-6">

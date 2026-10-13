@@ -1,14 +1,9 @@
 import CourseForm from "@/components/CourseForm";
 import { createClient } from "@/lib/supabase/server";
+import { getSchoolYear } from "@/lib/schoolYear";
 import { createCourse } from "../courses/actions";
 import type { CatalogCourse } from "@/lib/types";
 import { logout } from "@/app/auth/actions";
-
-function defaultSchoolYear(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  return now.getMonth() >= 6 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
-}
 
 export default async function OnboardingPage({
   searchParams,
@@ -16,6 +11,7 @@ export default async function OnboardingPage({
   searchParams: { error?: string };
 }) {
   const supabase = createClient();
+  const schoolYear = await getSchoolYear();
   const { data: catalog } = await supabase
     .from("catalog_courses")
     .select("*")
@@ -51,7 +47,7 @@ export default async function OnboardingPage({
         <CourseForm
           catalog={(catalog ?? []) as CatalogCourse[]}
           action={createCourse}
-          defaultSchoolYear={defaultSchoolYear()}
+          defaultSchoolYear={schoolYear}
           redirectTo="/dashboard"
           submitLabel="Add course and continue"
         />
