@@ -63,12 +63,8 @@ alter table public.catalog_courses enable row level security;
 
 create policy "catalog_select_all" on public.catalog_courses
   for select using (true);
-create policy "catalog_insert_open" on public.catalog_courses
-  for insert with check (true);
-create policy "catalog_update_open" on public.catalog_courses
-  for update using (true);
-create policy "catalog_delete_open" on public.catalog_courses
-  for delete using (true);
+-- No insert/update/delete policies: only the password-gated /admin page can
+-- change the catalog, and it does so with the service-role key on the server.
 
 -- ---------------------------------------------------------------------------
 -- courses: a user's own schedule of courses, one row per course per year

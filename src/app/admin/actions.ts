@@ -15,7 +15,7 @@ async function requireAdmin() {
 
 export async function addCatalogCourse(formData: FormData) {
   await requireAdmin();
-  const supabase = createClient();
+  const supabase = createAdminClient(); // service role: catalog writes are admin-only
 
   const { error } = await supabase.from("catalog_courses").insert({
     name: String(formData.get("name") || "").trim(),
@@ -34,7 +34,7 @@ export async function addCatalogCourse(formData: FormData) {
 
 export async function updateCatalogCourse(id: string, formData: FormData) {
   await requireAdmin();
-  const supabase = createClient();
+  const supabase = createAdminClient(); // service role: catalog writes are admin-only
 
   const { error } = await supabase
     .from("catalog_courses")
@@ -56,7 +56,7 @@ export async function updateCatalogCourse(id: string, formData: FormData) {
 
 export async function deleteCatalogCourse(id: string) {
   await requireAdmin();
-  const supabase = createClient();
+  const supabase = createAdminClient(); // service role: catalog writes are admin-only
   await supabase.from("catalog_courses").delete().eq("id", id);
   revalidatePath("/admin");
   redirect("/admin");

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function login(formData: FormData) {
   const email = String(formData.get("email") || "");
@@ -30,15 +31,29 @@ export async function signup(formData: FormData) {
     );
   }
 
-  const supabase = createClient();
-  const { error } = await supabase.auth.signUp({
+  // Create the account already confirmed, using the service-role key. This
+  // sends no email at all, so Supabase's email rate limit never applies and
+  // the "Confirm email" setting doesn't matter.
+  const admin = createAdminClient();
+  const { error: createError } = await admin.auth.admin.createUser({
     email,
     password,
-    options: { data: { full_name: fullName, grade_level: gradeLevel } },
+    email_confirm: true,
+    user_metadata: { full_name: fullName, grade_level: gradeLevel },
   });
 
+  if (createError) {
+    const msg = /already|registered|exists/i.test(createError.message)
+      ? "That email already has an account. Try logging in."
+      : createError.message;
+    redirect(`/signup?error=${encodeURIComponent(msg)}`);
+  }
+
+  // Then sign them in normally so the session cookie is set.
+  const supabase = createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
-    redirect(`/signup?error=${encodeURIComponent(error.message)}`);
+    redirect(`/login?error=${encodeURIComponent(error.message)}`);
   }
   redirect("/dashboard");
 }
