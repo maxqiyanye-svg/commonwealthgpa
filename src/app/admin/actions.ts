@@ -113,3 +113,21 @@ export async function setSchoolYear(formData: FormData) {
     : `School year set to ${next}. New courses will default to it.`;
   redirect(`/admin?msg=${encodeURIComponent(note)}`);
 }
+
+export async function setCurrentQuarter(formData: FormData) {
+  await requireAdmin();
+  const q = String(formData.get("current_quarter") || "");
+  if (!["Q1", "Q2", "Q3", "Q4"].includes(q)) {
+    redirect(`/admin?msg=${encodeURIComponent("Pick Q1, Q2, Q3 or Q4.")}`);
+  }
+  const admin = createAdminClient();
+  const { error } = await admin.from("app_settings").upsert(
+    { key: "current_quarter", value: q, updated_at: new Date().toISOString() },
+    { onConflict: "key" }
+  );
+  if (error) {
+    redirect(`/admin?msg=${encodeURIComponent(error.message)}`);
+  }
+  revalidatePath("/", "layout");
+  redirect(`/admin?msg=${encodeURIComponent(`Current quarter set to ${q}.`)}`);
+}

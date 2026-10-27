@@ -12,6 +12,7 @@ import CategoryQuickPicks from "@/components/CategoryQuickPicks";
 import GradeTrendChart, { type GradeTrendPoint } from "@/components/charts/GradeTrendChart";
 import { CATEGORY_COLORS } from "@/lib/chartColors";
 import { placeInQuarter, quarterStarts } from "@/lib/schoolCalendar";
+import { getCurrentQuarter } from "@/lib/currentQuarter";
 
 const TIER_LABELS: Record<string, string> = {
   excellent: "Excellent",
@@ -49,9 +50,10 @@ export default async function GradesCoursePage({
   const categoryList = (categories ?? []) as GradeCategory[];
   const assignmentList = (assignments ?? []) as Assignment[];
 
+  const currentQuarter = await getCurrentQuarter(courseRow.school_year);
   const period = (ALL_PERIODS.includes(searchParams.period as Period)
     ? searchParams.period
-    : "Q1") as Period;
+    : currentQuarter) as Period;
 
   const weightSum = categoryList.reduce((sum, c) => sum + c.weight, 0);
   const composite = compositeForPeriod(categoryList, assignmentList, period);
@@ -202,17 +204,28 @@ export default async function GradesCoursePage({
         </section>
 
         <section className="card p-6">
-          <div className="flex flex-wrap gap-2 mb-4">
-            {ALL_PERIODS.map((p) => (
-              <Link
-                key={p}
-                href={`/grades/${courseRow.id}?period=${p}`}
-                className={`text-xs rounded-full px-3 py-1.5 border ${
-                  period === p ? "bg-accent text-white border-accent" : "border-line text-ink-secondary"
-                }`}
-              >
-                {PERIOD_LABELS[p]}
-              </Link>
+          <div className="flex flex-wrap gap-x-6 gap-y-3 mb-4">
+            {([
+              ["Semester 1", ["Q1", "Q2", "S1"]],
+              ["Semester 2", ["Q3", "Q4", "S2"]],
+            ] as [string, Period[]][]).map(([title, periods]) => (
+              <div key={title}>
+                <p className="text-xs text-ink-muted mb-1">{title}</p>
+                <div className="flex flex-wrap gap-2">
+                  {periods.map((p) => (
+                    <Link
+                      key={p}
+                      href={`/grades/${courseRow.id}?period=${p}`}
+                      className={`text-xs rounded-full px-3 py-1.5 border ${
+                        period === p ? "bg-accent text-white border-accent" : "border-line text-ink-secondary"
+                      }`}
+                    >
+                      {PERIOD_LABELS[p]}
+                      {p === currentQuarter ? " · now" : ""}
+                    </Link>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 

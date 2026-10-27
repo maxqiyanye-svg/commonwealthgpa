@@ -69,7 +69,7 @@ export async function addCategory(courseId: string, formData: FormData) {
     redirect(`/grades/${courseId}?error=${encodeURIComponent(error.message)}`);
   }
 
-  revalidatePath(`/grades/${courseId}`);
+  revalidatePath("/", "layout");
   redirect(`/grades/${courseId}`);
 }
 
@@ -86,8 +86,7 @@ export async function deleteCategory(courseId: string, categoryId: string) {
   // composite may have changed, so recompute all of them.
   await Promise.all(ALL_PERIODS.map((p) => recomputeAndSave(supabase, courseId, user!.id, p)));
 
-  revalidatePath(`/grades/${courseId}`);
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   redirect(`/grades/${courseId}`);
 }
 
@@ -125,9 +124,7 @@ export async function addAssignment(courseId: string, formData: FormData) {
   // Q1/Q2/S1 and Q3/Q4/S2 share data, so refresh every period in the course.
   await Promise.all(ALL_PERIODS.map((p) => recomputeAndSave(supabase, courseId, user!.id, p)));
 
-  revalidatePath(`/grades/${courseId}`);
-  revalidatePath(`/courses/${courseId}`);
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   redirect(`/grades/${courseId}?period=${period}`);
 }
 
@@ -141,8 +138,6 @@ export async function deleteAssignment(courseId: string, assignmentId: string, p
   await supabase.from("assignments").delete().eq("id", assignmentId);
   await Promise.all(ALL_PERIODS.map((p) => recomputeAndSave(supabase, courseId, user!.id, p)));
 
-  revalidatePath(`/grades/${courseId}`);
-  revalidatePath(`/courses/${courseId}`);
-  revalidatePath("/dashboard");
+  revalidatePath("/", "layout");
   redirect(`/grades/${courseId}?period=${period}`);
 }

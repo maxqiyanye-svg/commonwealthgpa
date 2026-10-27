@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { CATEGORIES, CATEGORY_LABELS, LEVELS } from "@/lib/types";
 import type { CatalogCourse, Category, Level } from "@/lib/types";
 import { CATEGORY_COLORS } from "@/lib/chartColors";
-import { addCatalogCourse, updateCatalogCourse, deleteCatalogCourse, setSchoolYear } from "./actions";
+import { addCatalogCourse, updateCatalogCourse, deleteCatalogCourse, setSchoolYear, setCurrentQuarter } from "./actions";
+import { getCurrentQuarter, QUARTER_LIST } from "@/lib/currentQuarter";
 import { getSchoolYear } from "@/lib/schoolYear";
 import { isAdminAuthed, adminLogin, adminLogout } from "@/lib/adminAuth";
 
@@ -47,6 +48,7 @@ export default async function AdminPage({
   }
 
   const schoolYear = await getSchoolYear();
+  const currentQuarter = await getCurrentQuarter(schoolYear);
   const supabase = createClient();
   const { data: catalog } = await supabase
     .from("catalog_courses")
@@ -122,6 +124,29 @@ export default async function AdminPage({
             <button type="submit" className="rounded-lg bg-accent text-white text-sm px-4 py-2">
               Save year
             </button>
+          </form>
+        </section>
+
+        <section className="card p-6">
+          <h2 className="font-medium mb-1">Current quarter</h2>
+          <p className="text-xs text-ink-muted mb-4">
+            Currently <strong className="text-ink">{currentQuarter}</strong>. Every student&apos;s
+            Grades page opens on this quarter. Switch it when the quarter changes.
+          </p>
+          <form action={setCurrentQuarter} className="flex flex-wrap gap-2 items-center">
+            {QUARTER_LIST.map((q) => (
+              <button
+                key={q}
+                type="submit"
+                name="current_quarter"
+                value={q}
+                className={`text-sm rounded-full px-4 py-1.5 border ${
+                  q === currentQuarter ? "bg-accent text-white border-accent" : "border-line text-ink-secondary"
+                }`}
+              >
+                {q}
+              </button>
+            ))}
           </form>
         </section>
 

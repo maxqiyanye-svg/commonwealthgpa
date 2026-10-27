@@ -10,7 +10,7 @@ export function quarterStarts(schoolYear: string): Record<"Q1" | "Q2" | "Q3" | "
   const next = first + 1;
   return {
     Q1: new Date(first, 8, 1), // Sep 1
-    Q2: new Date(first, 9, 31), // Oct 31
+    Q2: new Date(first, 9, 26), // late Oct
     Q3: new Date(next, 0, 29), // Jan 29
     Q4: new Date(next, 2, 27), // Mar 27
     END: new Date(next, 5, 15), // mid-June
