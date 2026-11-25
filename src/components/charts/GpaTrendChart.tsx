@@ -40,8 +40,11 @@ export default function GpaTrendChart({ data }: { data: TimelinePoint[] }) {
           width={32}
         />
         <Tooltip
+          itemStyle={{ color: "var(--text-primary)" }}
+          labelStyle={{ color: "var(--text-secondary)" }}
           contentStyle={{
             background: "var(--surface-1)",
+            color: "var(--text-primary)",
             border: "1px solid var(--border)",
             borderRadius: 8,
             fontSize: 13,

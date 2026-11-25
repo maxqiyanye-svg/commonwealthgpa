@@ -81,8 +81,11 @@ export default function GradeTrendChart({
             `${value}% (${props.payload.letter})`,
             `After ${props.payload.label}`,
           ]}
+          itemStyle={{ color: "var(--text-primary)" }}
+          labelStyle={{ color: "var(--text-secondary)" }}
           contentStyle={{
             background: "var(--surface-1)",
+            color: "var(--text-primary)",
             border: "1px solid var(--border)",
             borderRadius: 8,
             fontSize: 13,

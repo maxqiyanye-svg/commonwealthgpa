@@ -43,8 +43,12 @@ export default function CategoryBarChart({ data }: { data: CategoryPoint[] }) {
           formatter={(value: number, _name, props) =>
             props.payload.hasData ? [value, "Weighted GPA"] : ["no grades yet", ""]
           }
+          cursor={{ fill: "var(--border)" }}
+          itemStyle={{ color: "var(--text-primary)" }}
+          labelStyle={{ color: "var(--text-secondary)" }}
           contentStyle={{
             background: "var(--surface-1)",
+            color: "var(--text-primary)",
             border: "1px solid var(--border)",
             borderRadius: 8,
             fontSize: 13,
